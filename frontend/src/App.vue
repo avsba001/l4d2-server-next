@@ -4,10 +4,23 @@
   import { ConfigProvider } from 'ant-design-vue';
 
   const themeStore = useThemeStore();
+
+  /**
+   * 解决 Ant Design Vue 组件（如 Tooltip, Select 等）的浮层在页面切换时
+   * 可能残留或位置错误导致页面出现滚动条的问题。
+   * 将挂载节点设置为触发节点的父元素，使其随组件销毁而销毁。
+   */
+  const getPopupContainer = (el?: HTMLElement) => {
+    if (el && el.parentNode) {
+      return el.parentNode as HTMLElement;
+    }
+    return document.body;
+  };
 </script>
 
 <template>
   <ConfigProvider
+    :getPopupContainer="getPopupContainer"
     :theme="{
       algorithm: themeStore.isDark ? theme.darkAlgorithm : theme.defaultAlgorithm,
       token: {
