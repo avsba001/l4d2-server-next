@@ -15,48 +15,62 @@ func GetPluginConfigs(pluginName string) ([]PluginConfigFile, error) {
 
 	storePath := getStorePath()
 
-	// Check multiple possible locations for plugins
-	possiblePaths := []string{
-		filepath.Join(storePath, pluginName, "left4dead2", "addons", "sourcemod", "plugins"),
-		filepath.Join(storePath, pluginName, "addons", "sourcemod", "plugins"),
+	type PathPair struct {
+		PluginDir string
+		ConfigDir string
+	}
+
+	pathPairs := []PathPair{
+		{
+			PluginDir: filepath.Join(storePath, pluginName, "left4dead2", "addons", "sourcemod", "plugins"),
+			ConfigDir: filepath.Join(storePath, pluginName, "left4dead2", "cfg", "sourcemod"),
+		},
+		{
+			PluginDir: filepath.Join(storePath, pluginName, "addons", "sourcemod", "plugins"),
+			ConfigDir: filepath.Join(storePath, pluginName, "cfg", "sourcemod"),
+		},
 	}
 
 	configs := make([]PluginConfigFile, 0, 2)
-	processedCfgs := make(map[string]bool)
+	candidateConfigs := make(map[string]bool)
 
-	for _, pluginDir := range possiblePaths {
-		entries, err := os.ReadDir(pluginDir)
-		if err != nil {
-			continue
-		}
-
-		for _, entry := range entries {
-			if !entry.IsDir() && strings.HasSuffix(entry.Name(), ".smx") {
-				baseName := strings.TrimSuffix(entry.Name(), ".smx")
-				cfgName := baseName + ".cfg"
-
-				if processedCfgs[cfgName] {
-					continue
-				}
-
-				// Check if cfg exists in server cfg/sourcemod
-				cfgPath := filepath.Join(consts.GamePath, "cfg", "sourcemod", cfgName)
-
-				if _, err := os.Stat(cfgPath); err == nil {
-					// Parse it
-					cvars, err := ParseSourceModConfig(cfgPath)
-					if err != nil {
-						fmt.Printf("Failed to parse config %s: %v\n", cfgPath, err)
-						continue
-					}
-
-					configs = append(configs, PluginConfigFile{
-						FileName: cfgName,
-						Cvars:    cvars,
-					})
-					processedCfgs[cfgName] = true
+	for _, paths := range pathPairs {
+		if entries, err := os.ReadDir(paths.PluginDir); err == nil {
+			for _, entry := range entries {
+				if !entry.IsDir() && strings.HasSuffix(entry.Name(), ".smx") {
+					baseName := strings.TrimSuffix(entry.Name(), ".smx")
+					candidateConfigs[baseName+".cfg"] = true
 				}
 			}
+		}
+
+		if entries, err := os.ReadDir(paths.ConfigDir); err == nil {
+			for _, entry := range entries {
+				if !entry.IsDir() && strings.HasSuffix(entry.Name(), ".cfg") {
+					candidateConfigs[entry.Name()] = true
+				}
+			}
+		}
+	}
+
+	for cfgName := range candidateConfigs {
+		serverCfgPath := filepath.Join(consts.GamePath, "cfg", "sourcemod", cfgName)
+
+		var cvars []CvarConfig
+		var err error
+
+		if _, errStat := os.Stat(serverCfgPath); errStat == nil {
+			cvars, err = ParseSourceModConfig(serverCfgPath)
+			if err != nil {
+				fmt.Printf("Failed to parse server config %s: %v\n", serverCfgPath, err)
+			}
+		}
+
+		if len(cvars) > 0 {
+			configs = append(configs, PluginConfigFile{
+				FileName: cfgName,
+				Cvars:    cvars,
+			})
 		}
 	}
 

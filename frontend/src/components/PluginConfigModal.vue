@@ -9,6 +9,8 @@
     Input as AInput,
     Button as AButton,
     Tag as ATag,
+    Collapse as ACollapse,
+    CollapsePanel as ACollapsePanel,
   } from 'ant-design-vue';
   import { api } from '../services/api';
   import { useAuthStore } from '../stores/auth';
@@ -41,13 +43,22 @@
   const loading = ref(false);
   const pluginConfigs = ref<PluginConfigFile[]>([]);
   const tempApplying = ref<Record<string, boolean>>({});
+  const activeKey = ref<string>('');
 
   const fetchConfigs = async () => {
     if (!props.pluginName) return;
     loading.value = true;
     pluginConfigs.value = [];
+    activeKey.value = '';
     try {
-      pluginConfigs.value = await api.getPluginConfigs(props.pluginName);
+      const configs = await api.getPluginConfigs(props.pluginName);
+      pluginConfigs.value = configs;
+      // Only auto-expand if there is exactly one config file
+      if (configs && configs.length === 1) {
+        activeKey.value = configs[0].file_name;
+      } else {
+        activeKey.value = '';
+      }
     } catch (error: any) {
       message.error('加载配置失败: ' + error.message);
     } finally {
@@ -111,64 +122,66 @@
     >
       该插件没有找到可配置的文件，请确保插件已启用且生成了配置文件。
     </div>
-    <div v-else class="space-y-6 max-h-[70vh] overflow-y-auto pr-1 sm:pr-2 custom-scrollbar">
-      <div v-for="file in pluginConfigs" :key="file.file_name" class="mb-6">
-        <h3
-          class="text-base sm:text-lg font-bold mb-4 flex flex-wrap items-center gap-2 dark:text-gray-200"
+    <div v-else class="max-h-[70vh] overflow-y-auto pr-1 sm:pr-2 custom-scrollbar">
+      <a-collapse v-model:activeKey="activeKey" accordion>
+        <a-collapse-panel
+          v-for="file in pluginConfigs"
+          :key="file.file_name"
+          :header="`配置文件: ${file.file_name}`"
         >
-          <span class="text-gray-400 dark:text-gray-500 text-sm">配置文件:</span>
-          <span class="break-all">{{ file.file_name }}</span>
-        </h3>
-        <a-form layout="vertical">
-          <div
-            v-for="cvar in file.cvars"
-            :key="cvar.name"
-            class="mb-4 p-3 sm:p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-100 dark:border-gray-700 hover:border-blue-100 dark:hover:border-blue-900 transition-colors"
-          >
-            <div class="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-2 gap-2">
-              <label
-                class="text-sm sm:text-base font-medium text-gray-800 dark:text-gray-200 break-all"
-                >{{ cvar.name }}</label
-              >
-              <div class="flex flex-wrap gap-1 shrink-0">
-                <a-tag v-if="cvar.default" color="blue" class="mr-0">Def: {{ cvar.default }}</a-tag>
-                <a-tag v-if="cvar.min" color="orange" class="mr-0">Min: {{ cvar.min }}</a-tag>
-                <a-tag v-if="cvar.max" color="red" class="mr-0">Max: {{ cvar.max }}</a-tag>
-              </div>
-            </div>
-
+          <a-form layout="vertical">
             <div
-              v-if="cvar.description"
-              class="mb-3 text-xs sm:text-sm text-gray-500 dark:text-gray-400 whitespace-pre-wrap bg-white dark:bg-gray-900 p-2 rounded border border-gray-100 dark:border-gray-700"
+              v-for="cvar in file.cvars"
+              :key="cvar.name"
+              class="mb-4 p-3 sm:p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-100 dark:border-gray-700 hover:border-blue-100 dark:hover:border-blue-900 transition-colors"
             >
-              {{ cvar.description }}
-            </div>
-
-            <a-form-item class="mb-0">
-              <div class="flex flex-col sm:flex-row gap-2">
-                <a-input v-model:value="cvar.value" class="flex-1" />
-                <div class="flex gap-2 justify-end sm:justify-start shrink-0">
-                  <a-button
-                    class="flex-1 sm:flex-none"
-                    :loading="tempApplying[cvar.name]"
-                    @click="applyTempConfig(cvar)"
+              <div class="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-2 gap-2">
+                <label
+                  class="text-sm sm:text-base font-medium text-gray-800 dark:text-gray-200 break-all"
+                  >{{ cvar.name }}</label
+                >
+                <div class="flex flex-wrap gap-1 shrink-0">
+                  <a-tag v-if="cvar.default" color="blue" class="mr-0"
+                    >Def: {{ cvar.default }}</a-tag
                   >
-                    临时设置
-                  </a-button>
-                  <a-button
-                    type="primary"
-                    class="flex-1 sm:flex-none"
-                    @click="saveConfig(file.file_name, cvar)"
-                    :disabled="!authStore.isAdmin"
-                  >
-                    保存
-                  </a-button>
+                  <a-tag v-if="cvar.min" color="orange" class="mr-0">Min: {{ cvar.min }}</a-tag>
+                  <a-tag v-if="cvar.max" color="red" class="mr-0">Max: {{ cvar.max }}</a-tag>
                 </div>
               </div>
-            </a-form-item>
-          </div>
-        </a-form>
-      </div>
+
+              <div
+                v-if="cvar.description"
+                class="mb-3 text-xs sm:text-sm text-gray-500 dark:text-gray-400 whitespace-pre-wrap bg-white dark:bg-gray-900 p-2 rounded border border-gray-100 dark:border-gray-700"
+              >
+                {{ cvar.description }}
+              </div>
+
+              <a-form-item class="mb-0">
+                <div class="flex flex-col sm:flex-row gap-2">
+                  <a-input v-model:value="cvar.value" class="flex-1" />
+                  <div class="flex gap-2 justify-end sm:justify-start shrink-0">
+                    <a-button
+                      class="flex-1 sm:flex-none"
+                      :loading="tempApplying[cvar.name]"
+                      @click="applyTempConfig(cvar)"
+                    >
+                      临时设置
+                    </a-button>
+                    <a-button
+                      type="primary"
+                      class="flex-1 sm:flex-none"
+                      @click="saveConfig(file.file_name, cvar)"
+                      :disabled="!authStore.isAdmin"
+                    >
+                      保存
+                    </a-button>
+                  </div>
+                </div>
+              </a-form-item>
+            </div>
+          </a-form>
+        </a-collapse-panel>
+      </a-collapse>
     </div>
   </a-modal>
 </template>
