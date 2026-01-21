@@ -22,6 +22,19 @@ func main() {
 
 	router := gin.Default()
 
+	// Static files cache middleware
+	router.Use(func(c *gin.Context) {
+		path := c.Request.URL.Path
+		if path == "/" || path == "/index.html" {
+			// HTML files: use ETag/Last-Modified (negotiation)
+			c.Header("Cache-Control", "no-cache")
+		} else if filepath.Ext(path) != "" {
+			// Other static resources (js/css/etc with hash): cache for 3 days
+			c.Header("Cache-Control", "public, max-age=259200")
+		}
+		c.Next()
+	})
+
 	router.StaticFS("/", http.Dir("./static"))
 
 	// 如果本地的private.key不存在，创建一个随机HS256密钥
