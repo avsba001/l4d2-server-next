@@ -12,7 +12,7 @@
       </div>
 
       <!-- Center: Time Range Selector -->
-      <div v-if="historyEnabled" class="flex-1 flex justify-center">
+      <div v-if="historyEnabled && isAdmin" class="flex-1 flex justify-center">
         <a-segmented
           :value="viewMode"
           :options="[
@@ -189,7 +189,7 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue';
+  import { ref, onMounted, onUnmounted, watch, nextTick, computed } from 'vue';
   import {
     LineChartOutlined,
     PlayCircleOutlined,
@@ -220,10 +220,13 @@
 
   import { useThemeStore } from '../stores/theme';
   import { useMonitorStore } from '../stores/monitor';
+  import { useAuthStore } from '../stores/auth';
   import { storeToRefs } from 'pinia';
 
   const themeStore = useThemeStore();
   const monitorStore = useMonitorStore();
+  const authStore = useAuthStore();
+  const isAdmin = computed(() => authStore.isAdmin);
 
   const {
     isMonitoring,

@@ -225,6 +225,13 @@ func GetMonitorConfig(c *gin.Context) {
 }
 
 func GetMonitorHistory(c *gin.Context) {
+	// 鉴权：只有管理员才能查看历史数据
+	role, _ := c.Get("role")
+	if role != "admin" {
+		c.JSON(http.StatusForbidden, gin.H{"error": "需要管理员权限才能查看历史数据"})
+		return
+	}
+
 	if db.DB == nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "History metrics are disabled"})
 		return
