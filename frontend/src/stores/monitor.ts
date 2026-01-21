@@ -178,8 +178,20 @@ export const useMonitorStore = defineStore('monitor', () => {
     await fetchCustomHistory(start, end);
   };
 
+  const clearRealtimeData = () => {
+    rTimestamps.value = [];
+    rCpuData.value = [];
+    rCpuMaxCoreData.value = [];
+    rMemUsedData.value = [];
+    rSwapUsedData.value = [];
+    rNetUpData.value = [];
+    rNetDownData.value = [];
+    rDiskUsedData.value = [];
+  };
+
   const startMonitor = () => {
     if (isMonitoring.value) return;
+    clearRealtimeData(); // Clear old data before starting new session
     isMonitoring.value = true;
     fetchData();
     timer.value = setInterval(fetchData, 1000);
