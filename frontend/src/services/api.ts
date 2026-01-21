@@ -407,6 +407,17 @@ class ApiService {
     if (!response.ok) throw new Error(await response.text());
     return response.json();
   }
+  async getMonitorConfig() {
+    const response = await this.post('/monitor/config');
+    if (!response.ok) throw new Error(await response.text());
+    return response.json();
+  }
+
+  async getMonitorHistory(start: number, end: number) {
+    const response = await this.post('/monitor/history', { start, end });
+    if (!response.ok) throw new Error(await response.text());
+    return response.json();
+  }
 }
 
 export const api = new ApiService();

@@ -2,6 +2,8 @@ package controller
 
 import (
 	"bufio"
+	"l4d2-manager-next/db"
+	"l4d2-manager-next/model"
 	"net/http"
 	"os"
 	"strconv"
@@ -35,14 +37,10 @@ var (
 	statusMutex   sync.RWMutex
 )
 
-func init() {
-	go startMonitor()
-}
-
-func startMonitor() {
+func StartMonitor() {
 	var lastNetSent, lastNetRecv uint64
 
-	// Initialize last net stats to avoid huge spike on first tick
+	// 初始化上次网络统计，避免首次运行时出现巨大峰值
 	netIO, _ := getNetIOCounters()
 	for _, io := range netIO {
 		name := strings.ToLower(io.Name)
@@ -53,14 +51,14 @@ func startMonitor() {
 		lastNetRecv += io.BytesRecv
 	}
 
-	// Warm up CPU (first call to Percent(0) sets baseline)
+	// 预热 CPU (首次调用 Percent(0) 设置基准)
 	cpu.Percent(0, false)
 	cpu.Percent(0, true)
 
 	ticker := time.NewTicker(1 * time.Second)
 	for range ticker.C {
 		// CPU
-		// When interval is 0, it calculates time since last call
+		// 当间隔为 0 时，计算自上次调用以来的时间
 		cpuPercents, _ := cpu.Percent(0, false)
 		totalCPU := 0.0
 		if len(cpuPercents) > 0 {
@@ -75,12 +73,12 @@ func startMonitor() {
 			}
 		}
 
-		// Memory
+		// 内存
 		vMem, _ := mem.VirtualMemory()
 		sMem, _ := mem.SwapMemory()
 
-		// Disk
-		// Get usage of the partition containing the current working directory
+		// 硬盘
+		// 获取包含当前工作目录的分区使用情况
 		var totalDisk, usedDisk uint64
 		cwd, err := os.Getwd()
 		if err == nil {
@@ -91,7 +89,7 @@ func startMonitor() {
 			}
 		}
 
-		// Network
+		// 网络
 		netIO, _ := getNetIOCounters()
 		var currNetSent, currNetRecv uint64
 		for _, io := range netIO {
@@ -103,7 +101,7 @@ func startMonitor() {
 			currNetRecv += io.BytesRecv
 		}
 
-		// Calculate Speed
+		// 计算速度
 		upSpeed := uint64(0)
 		downSpeed := uint64(0)
 
@@ -132,7 +130,31 @@ func startMonitor() {
 			Timestamp:    time.Now().Unix(),
 		}
 		statusMutex.Unlock()
+
+		// 如果启用，写入数据库
+		if db.DB != nil {
+			metric := model.SystemMetric{
+				Timestamp:    currentStatus.Timestamp,
+				CPUPercent:   toFixed(currentStatus.CPUPercent, 2),
+				CPUMaxCore:   toFixed(currentStatus.CPUMaxCore, 2),
+				MemUsed:      toFixed(float64(currentStatus.MemUsed)/1024/1024/1024, 2),  // GB
+				SwapUsed:     toFixed(float64(currentStatus.SwapUsed)/1024/1024/1024, 2), // GB
+				NetUpSpeed:   toFixed(float64(currentStatus.NetUpSpeed)/1024, 2),         // KB
+				NetDownSpeed: toFixed(float64(currentStatus.NetDownSpeed)/1024, 2),       // KB
+				DiskUsed:     toFixed(float64(currentStatus.DiskUsed)/1024/1024/1024, 2), // GB
+			}
+			// 在后台协程中创建记录，避免阻塞主监控循环
+			db.DB.Create(&metric)
+		}
 	}
+}
+
+func toFixed(val float64, precision int) float64 {
+	p := 1.0
+	for i := 0; i < precision; i++ {
+		p *= 10
+	}
+	return float64(int(val*p+0.5)) / p
 }
 
 func shouldIgnoreInterface(name string) bool {
@@ -194,4 +216,122 @@ func GetMonitorStatus(c *gin.Context) {
 	statusMutex.RLock()
 	defer statusMutex.RUnlock()
 	c.JSON(http.StatusOK, currentStatus)
+}
+
+func GetMonitorConfig(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{
+		"history_enabled": db.DB != nil,
+	})
+}
+
+func GetMonitorHistory(c *gin.Context) {
+	if db.DB == nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "History metrics are disabled"})
+		return
+	}
+
+	startStr := c.PostForm("start")
+	endStr := c.PostForm("end")
+	start, _ := strconv.ParseInt(startStr, 10, 64)
+	end, _ := strconv.ParseInt(endStr, 10, 64)
+
+	if start == 0 || end == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid start or end timestamp"})
+		return
+	}
+
+	// Count records first
+	var count int64
+	err := db.DB.Model(&model.SystemMetric{}).Where("timestamp >= ? AND timestamp <= ?", start, end).Count(&count).Error
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	type Result struct {
+		BucketTime   int64   `json:"timestamp"`
+		CPUPercent   float64 `json:"cpu_percent"`
+		CPUMaxCore   float64 `json:"cpu_max_core_percent"`
+		MemUsed      float64 `json:"mem_used"`
+		SwapUsed     float64 `json:"swap_used"`
+		NetUpSpeed   float64 `json:"net_up_speed"`
+		NetDownSpeed float64 `json:"net_down_speed"`
+		DiskUsed     float64 `json:"disk_used"`
+	}
+
+	var results []Result
+
+	// 如果数据量较少 (<= 2000)，直接返回原始数据
+	// ECharts 可以轻松处理 2000 个点。这样可以避免在数据稀疏时进行不当的降采样
+	if count <= 2000 {
+		var rawData []model.SystemMetric
+		err = db.DB.Where("timestamp >= ? AND timestamp <= ?", start, end).Order("timestamp ASC").Find(&rawData).Error
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		// 转换为 Result 格式
+		for _, m := range rawData {
+			results = append(results, Result{
+				BucketTime:   m.Timestamp,
+				CPUPercent:   m.CPUPercent,
+				CPUMaxCore:   m.CPUMaxCore,
+				MemUsed:      m.MemUsed,
+				SwapUsed:     m.SwapUsed,
+				NetUpSpeed:   m.NetUpSpeed,
+				NetDownSpeed: m.NetDownSpeed,
+				DiskUsed:     m.DiskUsed,
+			})
+		}
+		c.JSON(http.StatusOK, results)
+		return
+	}
+
+	// 降采样逻辑: 目标约 720 个点
+	// 使用实际数据的时间范围而不是查询范围，以正确处理稀疏数据
+	var minTime, maxTime int64
+	type MinMax struct {
+		MinT int64
+		MaxT int64
+	}
+	var mm MinMax
+	err = db.DB.Model(&model.SystemMetric{}).
+		Select("MIN(timestamp) as min_t, MAX(timestamp) as max_t").
+		Where("timestamp >= ? AND timestamp <= ?", start, end).
+		Scan(&mm).Error
+
+	if err != nil {
+		// 如果失败则回退到查询范围
+		minTime = start
+		maxTime = end
+	} else {
+		minTime = mm.MinT
+		maxTime = mm.MaxT
+	}
+
+	duration := maxTime - minTime
+	if duration <= 0 {
+		duration = end - start // Fallback
+	}
+
+	targetPoints := int64(720)
+	bucketSize := duration / targetPoints
+	if bucketSize < 1 {
+		bucketSize = 1
+	}
+
+	// SQLite 聚合查询
+	err = db.DB.Model(&model.SystemMetric{}).
+		Select("CAST(timestamp / ? AS INTEGER) * ? as bucket_time, MAX(cpu_percent) as cpu_percent, MAX(cpu_max_core) as cpu_max_core, MAX(mem_used) as mem_used, MAX(swap_used) as swap_used, MAX(net_up_speed) as net_up_speed, MAX(net_down_speed) as net_down_speed, MAX(disk_used) as disk_used", bucketSize, bucketSize).
+		Where("timestamp >= ? AND timestamp <= ?", start, end).
+		Group("bucket_time").
+		Order("bucket_time ASC").
+		Scan(&results).Error
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, results)
 }

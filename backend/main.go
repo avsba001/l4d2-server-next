@@ -3,6 +3,7 @@ package main
 import (
 	"l4d2-manager-next/consts"
 	"l4d2-manager-next/controller"
+	"l4d2-manager-next/db"
 	"l4d2-manager-next/middlewares"
 	"net/http"
 	"os"
@@ -13,6 +14,12 @@ import (
 )
 
 func main() {
+	// Initialize DB if enabled
+	db.InitDB()
+
+	// Initialize Monitor
+	go controller.StartMonitor()
+
 	router := gin.Default()
 
 	router.StaticFS("/", http.Dir("./static"))
@@ -74,6 +81,8 @@ func main() {
 	router.POST("/download/restart", middlewares.Auth(privateKey), controller.RestartDownloadTask)
 	router.POST("/getUserPlaytime", middlewares.Auth(privateKey), controller.GetUserPlaytime)
 	router.POST("/monitor/status", middlewares.Auth(privateKey), controller.GetMonitorStatus)
+	router.POST("/monitor/config", middlewares.Auth(privateKey), controller.GetMonitorConfig)
+	router.POST("/monitor/history", middlewares.Auth(privateKey), controller.GetMonitorHistory)
 	router.POST("/rcon", middlewares.Auth(privateKey), controller.Rcon)
 	router.POST("/server-info/get", middlewares.Auth(privateKey), controller.GetServerInfo)
 	router.POST("/server-info/update", middlewares.Auth(privateKey), controller.UpdateServerInfo)

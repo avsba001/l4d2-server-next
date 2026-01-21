@@ -4,3 +4,6 @@ private.key
 /backend/plugins/
 /backend/manager_config.json
 *.exe
+*.db
+*.db-shm
+*.db-wal

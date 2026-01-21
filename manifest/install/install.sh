@@ -33,6 +33,14 @@ game_port=${game_port:-27015}
 read -r -p "请输入管理面板端口 (默认: 27020): " manager_port
 manager_port=${manager_port:-27020}
 
+# 询问是否开启历史性能监控
+read -r -p "是否开启历史性能监控(需持久化数据)? (y/n, 默认: n): " enable_history_metrics
+enable_history_metrics=${enable_history_metrics:-n}
+HISTORY_METRICS_VALUE="false"
+if [[ "$enable_history_metrics" =~ ^[Yy]$ ]]; then
+  HISTORY_METRICS_VALUE="true"
+fi
+
 # 生成随机RCON密码
 L4D2_RCON_PASSWORD=$(tr -dc 'A-Za-z0-9' </dev/urandom | head -c 16)
 
@@ -56,6 +64,8 @@ services:
       - "$game_port:27015/udp"
     volumes:
       - l4d2-data:/l4d2/left4dead2
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
     networks:
       - l4d2-network
     environment:
@@ -77,12 +87,15 @@ services:
       - l4d2-plugins:/plugins
       - /var/run/docker.sock:/var/run/docker.sock
       - /proc:/host/proc:ro
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
     environment:
       - L4D2_RESTART_BY_RCON=true
       - L4D2_MANAGER_PASSWORD=$admin_password
       - L4D2_RCON_PASSWORD=$L4D2_RCON_PASSWORD
       - L4D2_RCON_URL=l4d2:27015
       - L4D2_GAME_PATH=/left4dead2
+      - L4D2_HISTORY_METRICS=$HISTORY_METRICS_VALUE
     networks:
       - l4d2-network
     logging:

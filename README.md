@@ -91,6 +91,8 @@ services:
       - "27015:27015/udp"
     volumes:
       - l4d2-data:/l4d2/left4dead2
+      - /etc/localtime:/etc/localtime:ro # 同步宿主机时区
+      - /etc/timezone:/etc/timezone:ro
     networks:
       - l4d2-network
     environment:
@@ -107,6 +109,8 @@ services:
     volumes:
       - l4d2-data:/left4dead2 # 与游戏服务器共享数据卷
       - /proc:/host/proc:ro # 挂载宿主机进程信息用于监控
+      - /etc/localtime:/etc/localtime:ro # 同步宿主机时区
+      - /etc/timezone:/etc/timezone:ro
     environment:
       - L4D2_RESTART_BY_RCON=true
       - L4D2_MANAGER_PASSWORD=[web管理密码] # 请修改此处
@@ -132,6 +136,8 @@ docker run -d \
   --net host \
   -v /path/to/your/l4d2/left4dead2:/left4dead2 \
   -v /proc:/host/proc:ro \
+  -v /etc/localtime:/etc/localtime:ro \
+  -v /etc/timezone:/etc/timezone:ro \
   -e L4D2_MANAGER_PORT=27020 \
   -e L4D2_MANAGER_PASSWORD=[web管理密码] \
   -e L4D2_GAME_PATH=/left4dead2 \
@@ -178,6 +184,7 @@ docker run -d \
 | **L4D2_RCON_URL**         | RCON 地址 (IP:Port)                   | 推荐配置，否则无法切图/看状态 |
 | **L4D2_RCON_PASSWORD**    | RCON 密码                             | 推荐配置                      |
 | **L4D2_RESTART_BY_RCON**  | 是否通过 RCON 命令重启服务器          | `false` (推荐 `true`)         |
+| **L4D2_HISTORY_METRICS**  | 是否开启历史性能监控 (需持久化数据)   | `false`                       |
 | **STEAM_API_KEY**         | Steam API Key (用于查询玩家时长)      | 可选                          |
 | **L4D2_MANAGER_PORT**     | 管理器监听端口                        | `27020`                       |
 

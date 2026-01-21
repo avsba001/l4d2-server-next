@@ -10,8 +10,24 @@
         </h1>
         <p class="text-gray-500 dark:text-gray-400 mt-1">实时监控服务器资源使用情况</p>
       </div>
+
+      <!-- Center: Time Range Selector -->
+      <div v-if="historyEnabled" class="flex-1 flex justify-center">
+        <a-segmented
+          :value="viewMode"
+          :options="[
+            { label: '实时', value: 'realtime' },
+            { label: '1小时', value: '1h' },
+            { label: '24小时', value: '24h' },
+            { label: '3天', value: '3d' },
+          ]"
+          @change="(val: any) => setViewMode(val)"
+        />
+      </div>
+
       <div class="flex gap-3">
         <a-button
+          v-if="viewMode === 'realtime'"
           :type="isMonitoring ? 'primary' : 'default'"
           :danger="isMonitoring"
           @click="toggleMonitor"
@@ -23,6 +39,12 @@
             <PlayCircleOutlined v-else />
           </template>
           <span>{{ isMonitoring ? '停止监控' : '开始监控' }}</span>
+        </a-button>
+        <a-button v-else @click="refreshHistory" class="!flex !items-center !justify-center">
+          <template #icon>
+            <SyncOutlined />
+          </template>
+          <span>刷新数据</span>
         </a-button>
       </div>
     </div>
@@ -45,7 +67,7 @@
             <span v-else>Waiting for data...</span>
           </div>
         </div>
-        <div class="relative w-full h-64">
+        <div class="relative w-full h-72">
           <div
             v-if="!isMonitoring && cpuData.length === 0"
             class="absolute inset-0 flex flex-col items-center justify-center text-gray-300 dark:text-gray-600"
@@ -81,7 +103,7 @@
             <span v-if="memUsedData.length === 0">Waiting for data...</span>
           </div>
         </div>
-        <div class="relative w-full h-64">
+        <div class="relative w-full h-72">
           <div
             v-if="!isMonitoring && memUsedData.length === 0"
             class="absolute inset-0 flex flex-col items-center justify-center text-gray-300 dark:text-gray-600"
@@ -113,7 +135,7 @@
             <span v-else>Waiting for data...</span>
           </div>
         </div>
-        <div class="relative w-full h-64">
+        <div class="relative w-full h-72">
           <div
             v-if="!isMonitoring && netUpData.length === 0"
             class="absolute inset-0 flex flex-col items-center justify-center text-gray-300 dark:text-gray-600"
@@ -129,42 +151,37 @@
         </div>
       </div>
 
-      <!-- Disk (Progress Circle) -->
+      <!-- Disk -->
       <div
-        class="bg-white dark:bg-gray-900 p-4 rounded-lg shadow-sm transition-colors duration-300 flex flex-col"
+        class="bg-white dark:bg-gray-900 p-4 rounded-lg shadow-sm transition-colors duration-300"
       >
         <div
           class="flex justify-between items-center mb-4 border-b border-gray-100 dark:border-gray-800 pb-2"
         >
           <h3 class="font-bold text-gray-700 dark:text-gray-200">硬盘</h3>
           <div class="text-xs text-gray-500 dark:text-gray-400 font-mono">
-            <span v-if="diskTotal > 0">
-              {{ (diskUsed / 1024 / 1024 / 1024).toFixed(1) }} GB /
-              {{ (diskTotal / 1024 / 1024 / 1024).toFixed(1) }} GB
+            <span v-if="diskUsedData.length > 0">
+              {{ diskUsedData[diskUsedData.length - 1] }} GB
+              <span v-if="diskTotal > 0">
+                / {{ (diskTotal / 1024 / 1024 / 1024).toFixed(1) }} GB
+              </span>
             </span>
             <span v-else>Waiting for data...</span>
           </div>
         </div>
-        <div class="relative flex-1 flex flex-col justify-center items-center py-4">
+        <div class="relative w-full h-72">
           <div
-            v-if="!isMonitoring && diskTotal === 0"
-            class="absolute inset-0 flex flex-col items-center justify-center text-gray-300 dark:text-gray-600 bg-white dark:bg-gray-900 z-10"
+            v-if="!isMonitoring && diskUsedData.length === 0"
+            class="absolute inset-0 flex flex-col items-center justify-center text-gray-300 dark:text-gray-600"
           >
             <DatabaseOutlined class="text-6xl mb-2 opacity-50" />
             <span class="text-sm">点击开始监控以查看数据</span>
           </div>
-          <a-progress
-            type="circle"
-            :percent="diskPercent"
-            :stroke-color="{ '0%': '#108ee9', '100%': '#87d068' }"
-            :format="(percent) => `${percent?.toFixed(1)}%`"
-            :width="200"
-            :stroke-width="10"
-          />
-          <div class="mt-6 text-center text-gray-500 dark:text-gray-400">
-            <p class="text-lg font-medium">总空间使用率</p>
-            <p class="text-xs mt-1 text-gray-400">当前left4dead2所在磁盘分区</p>
-          </div>
+          <div
+            ref="diskChartRef"
+            class="w-full h-full"
+            :class="{ 'opacity-0': !isMonitoring && diskUsedData.length === 0 }"
+          ></div>
         </div>
       </div>
     </div>
@@ -180,15 +197,26 @@
     AppstoreAddOutlined,
     GlobalOutlined,
     DatabaseOutlined,
+    SyncOutlined,
   } from '@ant-design/icons-vue';
 
   // ECharts Core
   import * as echarts from 'echarts/core';
   import { LineChart } from 'echarts/charts';
   import { GridComponent, TooltipComponent, LegendComponent } from 'echarts/components';
+  import { ToolboxComponent, DataZoomComponent, BrushComponent } from 'echarts/components';
   import { CanvasRenderer } from 'echarts/renderers';
 
-  echarts.use([LineChart, GridComponent, TooltipComponent, LegendComponent, CanvasRenderer]);
+  echarts.use([
+    LineChart,
+    GridComponent,
+    TooltipComponent,
+    LegendComponent,
+    ToolboxComponent,
+    DataZoomComponent,
+    BrushComponent,
+    CanvasRenderer,
+  ]);
 
   import { useThemeStore } from '../stores/theme';
   import { useMonitorStore } from '../stores/monitor';
@@ -199,7 +227,10 @@
 
   const {
     isMonitoring,
+    historyEnabled,
+    viewMode,
     timestamps,
+    hRawTimestamps,
     cpuData,
     cpuMaxCoreData,
     memUsedData,
@@ -208,12 +239,12 @@
     swapTotal,
     netUpData,
     netDownData,
+    diskUsedData,
     diskTotal,
-    diskUsed,
-    diskPercent,
   } = storeToRefs(monitorStore);
 
-  const { toggleMonitor } = monitorStore;
+  const { toggleMonitor, fetchConfig, setViewMode, refreshHistory, fetchCustomHistory } =
+    monitorStore;
 
   const loading = ref(false);
 
@@ -221,10 +252,12 @@
   const cpuChartRef = ref<HTMLElement | null>(null);
   const memChartRef = ref<HTMLElement | null>(null);
   const netChartRef = ref<HTMLElement | null>(null);
+  const diskChartRef = ref<HTMLElement | null>(null);
 
   let cpuChart: echarts.ECharts | null = null;
   let memChart: echarts.ECharts | null = null;
   let netChart: echarts.ECharts | null = null;
+  let diskChart: echarts.ECharts | null = null;
 
   const getChartThemeColor = () => {
     return themeStore.isDark ? '#e5e7eb' : '#374151';
@@ -239,14 +272,44 @@
       backgroundColor: 'transparent',
       tooltip: {
         trigger: 'axis',
-        axisPointer: { type: 'cross' },
+        axisPointer: {
+          type: 'cross',
+          label: { show: false }, // Hide axis pointer labels
+        },
+      },
+      toolbox: {
+        show: false,
+        feature: {
+          brush: {
+            type: ['lineX'],
+          },
+        },
+      },
+      brush: {
+        xAxisIndex: 'all',
+        brushLink: 'all',
+        outOfBrush: {
+          colorAlpha: 0.1,
+        },
+        brushStyle: {
+          borderWidth: 1,
+          color: 'rgba(120,140,180,0.3)',
+          borderColor: 'rgba(120,140,180,0.8)',
+        },
       },
       grid: {
         left: '3%',
         right: '4%',
-        bottom: '3%',
+        bottom: '12%', // Adjusted bottom padding for legend
         top: '10%', // Reduced top padding since title is removed
         containLabel: true,
+      },
+      legend: {
+        show: true,
+        bottom: '0',
+        textStyle: {
+          color: getChartThemeColor(),
+        },
       },
       xAxis: {
         type: 'category',
@@ -267,13 +330,11 @@
         },
         axisLabel: { color: getChartThemeColor() },
       },
-      legend: {
-        show: false, // Hidden legend
-      },
     };
 
     if (cpuChartRef.value) {
       cpuChart = echarts.init(cpuChartRef.value);
+      bindChartEvents(cpuChart);
       cpuChart.setOption({
         ...commonOption,
         series: [
@@ -294,10 +355,12 @@
           },
         ],
       });
+      if (viewMode.value !== 'realtime') enableBrushSelection(cpuChart);
     }
 
     if (memChartRef.value) {
       memChart = echarts.init(memChartRef.value);
+      bindChartEvents(memChart);
       memChart.setOption({
         ...commonOption,
         series: [
@@ -319,10 +382,12 @@
           },
         ],
       });
+      if (viewMode.value !== 'realtime') enableBrushSelection(memChart);
     }
 
     if (netChartRef.value) {
       netChart = echarts.init(netChartRef.value);
+      bindChartEvents(netChart);
       netChart.setOption({
         ...commonOption,
         series: [
@@ -330,6 +395,26 @@
           { name: '下行', type: 'line', smooth: true, data: netDownData.value, showSymbol: false },
         ],
       });
+      if (viewMode.value !== 'realtime') enableBrushSelection(netChart);
+    }
+
+    if (diskChartRef.value) {
+      diskChart = echarts.init(diskChartRef.value);
+      bindChartEvents(diskChart);
+      diskChart.setOption({
+        ...commonOption,
+        series: [
+          {
+            name: '已用空间',
+            type: 'line',
+            smooth: true,
+            data: diskUsedData.value,
+            showSymbol: false,
+            areaStyle: { opacity: 0.3 },
+          },
+        ],
+      });
+      if (viewMode.value !== 'realtime') enableBrushSelection(diskChart);
     }
   };
 
@@ -352,6 +437,11 @@
       ...commonUpdate,
       series: [{ data: netUpData.value }, { data: netDownData.value }],
     });
+
+    diskChart?.setOption({
+      ...commonUpdate,
+      series: [{ data: diskUsedData.value }],
+    });
   };
 
   watch(
@@ -368,13 +458,134 @@
       cpuChart?.dispose();
       memChart?.dispose();
       netChart?.dispose();
+      diskChart?.dispose();
       nextTick(() => {
         initCharts();
       });
     }
   );
 
+  watch(viewMode, (newMode) => {
+    if (newMode !== 'realtime') {
+      nextTick(() => {
+        if (cpuChart) enableBrushSelection(cpuChart);
+        if (memChart) enableBrushSelection(memChart);
+        if (netChart) enableBrushSelection(netChart);
+        if (diskChart) enableBrushSelection(diskChart);
+      });
+    } else {
+      const resetCursor = (chart: echarts.ECharts | null) => {
+        if (!chart) return;
+        clearBrush(chart);
+        chart.dispatchAction({
+          type: 'takeGlobalCursor',
+          key: 'dataZoomSelect',
+          dataZoomSelectActive: false, // Ensure other modes are off
+        });
+        // Reset to default cursor
+        chart.dispatchAction({
+          type: 'takeGlobalCursor',
+        });
+      };
+
+      resetCursor(cpuChart);
+      resetCursor(memChart);
+      resetCursor(netChart);
+      resetCursor(diskChart);
+    }
+  });
+
+  const handleBrushEnd = (params: any) => {
+    // Only handle if it comes from brush action
+    if (!params.areas || params.areas.length === 0) return;
+
+    const range = params.areas[0].coordRange;
+    // range is [startIndex, endIndex] for category axis
+    let startIndex = Math.floor(range[0]);
+    let endIndex = Math.floor(range[1]);
+
+    // Ensure indices are within bounds
+    if (startIndex < 0) startIndex = 0;
+    if (endIndex >= hRawTimestamps.value.length) endIndex = hRawTimestamps.value.length - 1;
+
+    // Get timestamps using indices
+    let startTime = hRawTimestamps.value[startIndex];
+    let endTime = hRawTimestamps.value[endIndex];
+
+    // Handle case where selection is too small or invalid
+    if (startTime && endTime) {
+      if (startTime >= endTime) {
+        // If same point or invalid, expand range slightly (e.g. 1 minute window)
+        // But we need valid boundaries.
+        // If it's a single point, we can try to get more data around it.
+        // Let's just ensure endTime > startTime by at least 1 second if they are equal
+        if (startTime === endTime) {
+          endTime = startTime + 60; // Add 60 seconds
+          startTime = startTime - 60; // Minus 60 seconds
+        }
+      }
+
+      loading.value = true;
+      fetchCustomHistory(startTime, endTime).finally(() => {
+        loading.value = false;
+        // Re-enable selection mode after data reload
+        if (cpuChart) {
+          clearBrush(cpuChart);
+          enableBrushSelection(cpuChart);
+        }
+        if (memChart) {
+          clearBrush(memChart);
+          enableBrushSelection(memChart);
+        }
+        if (netChart) {
+          clearBrush(netChart);
+          enableBrushSelection(netChart);
+        }
+        if (diskChart) {
+          clearBrush(diskChart);
+          enableBrushSelection(diskChart);
+        }
+      });
+    } else {
+      // Invalid selection or no data, just clear brush
+      if (cpuChart) clearBrush(cpuChart);
+      if (memChart) clearBrush(memChart);
+      if (netChart) clearBrush(netChart);
+      if (diskChart) clearBrush(diskChart);
+    }
+  };
+
+  const clearBrush = (chart: echarts.ECharts) => {
+    chart.dispatchAction({
+      type: 'brush',
+      areas: [],
+    });
+  };
+
+  const enableBrushSelection = (chart: echarts.ECharts) => {
+    // We use setTimeout to ensure the chart is ready and rendered
+    setTimeout(() => {
+      chart.dispatchAction({
+        type: 'takeGlobalCursor',
+        key: 'brush',
+        brushOption: {
+          brushType: 'lineX',
+          brushMode: 'single',
+        },
+      });
+    }, 100);
+  };
+
+  const bindChartEvents = (chart: echarts.ECharts) => {
+    chart.on('brushEnd', handleBrushEnd);
+  };
+
+  const unbindChartEvents = (chart: echarts.ECharts) => {
+    chart.off('brushEnd');
+  };
+
   onMounted(() => {
+    fetchConfig();
     initCharts();
     window.addEventListener('resize', handleResize);
   });
@@ -383,14 +594,29 @@
     cpuChart?.resize();
     memChart?.resize();
     netChart?.resize();
+    diskChart?.resize();
   };
 
   onUnmounted(() => {
     // Do NOT stop monitor here to keep it running in background
     // stopMonitor();
     window.removeEventListener('resize', handleResize);
-    cpuChart?.dispose();
-    memChart?.dispose();
-    netChart?.dispose();
+
+    if (cpuChart) {
+      unbindChartEvents(cpuChart);
+      cpuChart.dispose();
+    }
+    if (memChart) {
+      unbindChartEvents(memChart);
+      memChart.dispose();
+    }
+    if (netChart) {
+      unbindChartEvents(netChart);
+      netChart.dispose();
+    }
+    if (diskChart) {
+      unbindChartEvents(diskChart);
+      diskChart.dispose();
+    }
   });
 </script>
