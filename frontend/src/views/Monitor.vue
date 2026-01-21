@@ -334,6 +334,7 @@
 
     if (cpuChartRef.value) {
       cpuChart = echarts.init(cpuChartRef.value);
+      cpuChart.group = 'monitorGroup';
       bindChartEvents(cpuChart);
       cpuChart.setOption({
         ...commonOption,
@@ -360,6 +361,7 @@
 
     if (memChartRef.value) {
       memChart = echarts.init(memChartRef.value);
+      memChart.group = 'monitorGroup';
       bindChartEvents(memChart);
       memChart.setOption({
         ...commonOption,
@@ -387,6 +389,7 @@
 
     if (netChartRef.value) {
       netChart = echarts.init(netChartRef.value);
+      netChart.group = 'monitorGroup';
       bindChartEvents(netChart);
       netChart.setOption({
         ...commonOption,
@@ -400,6 +403,7 @@
 
     if (diskChartRef.value) {
       diskChart = echarts.init(diskChartRef.value);
+      diskChart.group = 'monitorGroup';
       bindChartEvents(diskChart);
       diskChart.setOption({
         ...commonOption,
@@ -416,6 +420,9 @@
       });
       if (viewMode.value !== 'realtime') enableBrushSelection(diskChart);
     }
+
+    // Connect all charts in the group
+    echarts.connect('monitorGroup');
   };
 
   const updateCharts = () => {
