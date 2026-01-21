@@ -323,7 +323,11 @@
             :columns="mapColumns"
             :dataSource="filteredMaps"
             :loading="loading"
-            :pagination="{ pageSize: 10 }"
+            :pagination="{
+              pageSize: 10,
+              showTotal: (total: number) => `共 ${total} 条`,
+              showSizeChanger: true,
+            }"
             rowKey="name"
             :row-selection="{ selectedRowKeys: selectedRowKeys, onChange: onSelectChange }"
             :scroll="{ x: 500 }"
@@ -441,20 +445,20 @@
                       record.status === 2
                         ? 'success'
                         : record.status === 1
-                        ? 'processing'
-                        : record.status === 3
-                        ? 'error'
-                        : 'default'
+                          ? 'processing'
+                          : record.status === 3
+                            ? 'error'
+                            : 'default'
                     "
                   >
                     {{
                       record.status === 2
                         ? '已完成'
                         : record.status === 1
-                        ? '下载中'
-                        : record.status === 3
-                        ? '失败'
-                        : '等待中'
+                          ? '下载中'
+                          : record.status === 3
+                            ? '失败'
+                            : '等待中'
                     }}
                   </a-tag>
                 </div>
