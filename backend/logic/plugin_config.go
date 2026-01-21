@@ -21,7 +21,7 @@ func GetPluginConfigs(pluginName string) ([]PluginConfigFile, error) {
 		filepath.Join(storePath, pluginName, "addons", "sourcemod", "plugins"),
 	}
 
-	var configs []PluginConfigFile
+	configs := make([]PluginConfigFile, 0, 2)
 	processedCfgs := make(map[string]bool)
 
 	for _, pluginDir := range possiblePaths {

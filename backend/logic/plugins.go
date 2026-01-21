@@ -141,7 +141,7 @@ func GetPlugins() ([]Plugin, error) {
 		}
 	}
 
-	var plugins []Plugin
+	plugins := make([]Plugin, 0, 64)
 	for _, p := range pluginMap {
 		plugins = append(plugins, p)
 	}

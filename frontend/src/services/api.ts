@@ -144,7 +144,8 @@ class ApiService {
   async getPlugins() {
     const response = await this.post('/plugins/list');
     if (!response.ok) throw new Error(await response.text());
-    return response.json();
+    const data = await response.json();
+    return data || [];
   }
 
   async uploadPlugin(file: File | File[]) {

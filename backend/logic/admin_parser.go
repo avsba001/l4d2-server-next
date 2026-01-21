@@ -32,7 +32,7 @@ func ParseAdminsSimple() ([]AdminUser, error) {
 	}
 	defer file.Close()
 
-	var admins []AdminUser
+	admins := make([]AdminUser, 0, 4)
 	scanner := bufio.NewScanner(file)
 
 	// 正则匹配: "SteamID" "Flags" (可选 "Password") // 注释
