@@ -131,9 +131,27 @@ export const useMonitorStore = defineStore('monitor', () => {
     }
   };
 
+  const historyLoading = ref(false);
+  let abortController: AbortController | null = null;
+
   const fetchCustomHistory = async (start: number, end: number) => {
+    // If there is an ongoing request, abort it
+    if (abortController) {
+      abortController.abort();
+    }
+    abortController = new AbortController();
+
     try {
+      historyLoading.value = true;
+      const hide = message.loading('加载历史数据中...', 0);
       const data = await api.getMonitorHistory(start, end);
+
+      // If aborted, don't update state
+      if (abortController.signal.aborted) {
+        hide();
+        return;
+      }
+
       clearHistoryData();
 
       data.forEach((item: any) => {
@@ -162,9 +180,18 @@ export const useMonitorStore = defineStore('monitor', () => {
         hNetDownData.value.push(item.net_down_speed);
         hDiskUsedData.value.push(item.disk_used);
       });
-    } catch (e) {
-      console.error(e);
-      message.error('获取历史数据失败');
+      hide();
+      message.success('查询成功');
+    } catch (e: any) {
+      if (e.name !== 'AbortError') {
+        console.error(e);
+        message.error('获取历史数据失败');
+      }
+    } finally {
+      if (abortController && !abortController.signal.aborted) {
+        historyLoading.value = false;
+        abortController = null;
+      }
     }
   };
 
@@ -237,6 +264,7 @@ export const useMonitorStore = defineStore('monitor', () => {
   return {
     isMonitoring,
     historyEnabled,
+    historyLoading,
     viewMode,
     timestamps,
     hRawTimestamps,

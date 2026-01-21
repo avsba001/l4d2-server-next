@@ -21,6 +21,7 @@
             { label: '24小时', value: '24h' },
             { label: '3天', value: '3d' },
           ]"
+          :disabled="historyLoading"
           @change="(val: any) => setViewMode(val)"
         />
       </div>
@@ -40,7 +41,12 @@
           </template>
           <span>{{ isMonitoring ? '停止监控' : '开始监控' }}</span>
         </a-button>
-        <a-button v-else @click="refreshHistory" class="!flex !items-center !justify-center">
+        <a-button
+          v-else
+          @click="refreshHistory"
+          :loading="historyLoading"
+          class="!flex !items-center !justify-center"
+        >
           <template #icon>
             <SyncOutlined />
           </template>
@@ -231,6 +237,7 @@
   const {
     isMonitoring,
     historyEnabled,
+    historyLoading,
     viewMode,
     timestamps,
     hRawTimestamps,
@@ -505,7 +512,16 @@
     }
   });
 
-  const handleBrushEnd = (params: any) => {
+  // Debounce helper
+  const debounce = (fn: Function, delay: number) => {
+    let timeoutId: any;
+    return (...args: any[]) => {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => fn(...args), delay);
+    };
+  };
+
+  const handleBrushEnd = debounce((params: any) => {
     // Only handle if it comes from brush action
     if (!params.areas || params.areas.length === 0) return;
 
@@ -539,22 +555,26 @@
       fetchCustomHistory(startTime, endTime).finally(() => {
         loading.value = false;
         // Re-enable selection mode after data reload
-        if (cpuChart) {
-          clearBrush(cpuChart);
-          enableBrushSelection(cpuChart);
-        }
-        if (memChart) {
-          clearBrush(memChart);
-          enableBrushSelection(memChart);
-        }
-        if (netChart) {
-          clearBrush(netChart);
-          enableBrushSelection(netChart);
-        }
-        if (diskChart) {
-          clearBrush(diskChart);
-          enableBrushSelection(diskChart);
-        }
+        const resetCharts = () => {
+          if (cpuChart) {
+            clearBrush(cpuChart);
+            enableBrushSelection(cpuChart);
+          }
+          if (memChart) {
+            clearBrush(memChart);
+            enableBrushSelection(memChart);
+          }
+          if (netChart) {
+            clearBrush(netChart);
+            enableBrushSelection(netChart);
+          }
+          if (diskChart) {
+            clearBrush(diskChart);
+            enableBrushSelection(diskChart);
+          }
+        };
+        // Reset immediately
+        resetCharts();
       });
     } else {
       // Invalid selection or no data, just clear brush
@@ -563,7 +583,7 @@
       if (netChart) clearBrush(netChart);
       if (diskChart) clearBrush(diskChart);
     }
-  };
+  }, 100);
 
   const clearBrush = (chart: echarts.ECharts) => {
     chart.dispatchAction({
