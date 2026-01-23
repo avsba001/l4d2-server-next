@@ -1,7 +1,8 @@
 <script setup lang="ts">
-  import { ref, computed, onMounted, onUnmounted, h, watch } from 'vue';
+  import { ref, computed, onMounted, onUnmounted, h, watch, reactive } from 'vue';
   import { api } from '../services/api';
   import { message, Modal } from 'ant-design-vue';
+  import type { TablePaginationConfig } from 'ant-design-vue';
   import {
     InboxOutlined,
     ReloadOutlined,
@@ -264,6 +265,32 @@
     }
   });
 
+  const paginationConfig = reactive<TablePaginationConfig>({
+    current: 1,
+    pageSize: 10,
+    showSizeChanger: true,
+    pageSizeOptions: ['10', '20', '50', '100'],
+    showTotal: (total: number) => `共 ${total} 条`,
+  });
+
+  const handleTableChange = (pag: TablePaginationConfig) => {
+    paginationConfig.current = pag.current;
+    paginationConfig.pageSize = pag.pageSize;
+  };
+
+  const taskPaginationConfig = reactive<TablePaginationConfig>({
+    current: 1,
+    pageSize: 10,
+    showSizeChanger: true,
+    pageSizeOptions: ['10', '20', '50', '100'],
+    showTotal: (total: number) => `共 ${total} 条`,
+  });
+
+  const handleTaskTableChange = (pag: TablePaginationConfig) => {
+    taskPaginationConfig.current = pag.current;
+    taskPaginationConfig.pageSize = pag.pageSize;
+  };
+
   onMounted(() => {
     loadMaps();
     if (activeTab.value === 'download') {
@@ -323,11 +350,8 @@
             :columns="mapColumns"
             :dataSource="filteredMaps"
             :loading="loading"
-            :pagination="{
-              pageSize: 10,
-              showTotal: (total: number) => `共 ${total} 条`,
-              showSizeChanger: true,
-            }"
+            :pagination="paginationConfig"
+            @change="handleTableChange"
             rowKey="name"
             :row-selection="{ selectedRowKeys: selectedRowKeys, onChange: onSelectChange }"
             :scroll="{ x: 500 }"
@@ -413,7 +437,8 @@
           <a-table
             :columns="taskColumns"
             :dataSource="downloadTasks"
-            :pagination="{ pageSize: 10 }"
+            :pagination="taskPaginationConfig"
+            @change="handleTaskTableChange"
             :rowKey="(_: any, index?: number) => index || 0"
             :scroll="{ x: 500 }"
           >
@@ -485,7 +510,7 @@
                     type="text"
                     size="small"
                     danger
-                    @click="cancelTask(index)"
+                    @click="index !== undefined && cancelTask(index)"
                     class="!flex !items-center !justify-center"
                     title="取消"
                   >
@@ -495,7 +520,7 @@
                     v-if="record.status === 3"
                     type="text"
                     size="small"
-                    @click="restartTask(index)"
+                    @click="index !== undefined && restartTask(index)"
                     class="!flex !items-center !justify-center"
                     title="重试"
                   >

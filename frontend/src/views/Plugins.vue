@@ -1,5 +1,5 @@
 <script setup lang="ts">
-  import { ref, computed, onMounted, onErrorCaptured } from 'vue';
+  import { ref, computed, onMounted, onErrorCaptured, reactive } from 'vue';
   import {
     message,
     Card as ACard,
@@ -21,7 +21,7 @@
     SyncOutlined,
   } from '@ant-design/icons-vue';
   import { api } from '../services/api';
-  import type { UploadProps } from 'ant-design-vue';
+  import type { UploadProps, TablePaginationConfig } from 'ant-design-vue';
   import PluginConfigModal from '../components/PluginConfigModal.vue';
   import { useAuthStore } from '../stores/auth';
 
@@ -239,11 +239,30 @@
     },
   ];
 
-  const paginationConfig = {
+  const enabledPagination = reactive<TablePaginationConfig>({
+    current: 1,
     pageSize: 10,
     showSizeChanger: true,
     pageSizeOptions: ['10', '20', '50', '100'],
     showTotal: (total: number) => `共 ${total} 条`,
+  });
+
+  const disabledPagination = reactive<TablePaginationConfig>({
+    current: 1,
+    pageSize: 10,
+    showSizeChanger: true,
+    pageSizeOptions: ['10', '20', '50', '100'],
+    showTotal: (total: number) => `共 ${total} 条`,
+  });
+
+  const handleEnabledTableChange = (pag: TablePaginationConfig) => {
+    enabledPagination.current = pag.current;
+    enabledPagination.pageSize = pag.pageSize;
+  };
+
+  const handleDisabledTableChange = (pag: TablePaginationConfig) => {
+    disabledPagination.current = pag.current;
+    disabledPagination.pageSize = pag.pageSize;
   };
 </script>
 
@@ -304,7 +323,8 @@
             :columns="enabledColumns"
             :data-source="filteredEnabledPlugins"
             :loading="loading"
-            :pagination="paginationConfig"
+            :pagination="enabledPagination"
+            @change="handleEnabledTableChange"
             row-key="name"
             :scroll="{ x: 'max-content' }"
           >
@@ -427,7 +447,8 @@
             :columns="disabledColumns"
             :data-source="filteredDisabledPlugins"
             :loading="loading"
-            :pagination="paginationConfig"
+            @change="handleDisabledTableChange"
+            :pagination="disabledPagination"
             row-key="name"
             :row-selection="{ selectedRowKeys: selectedRowKeys, onChange: onSelectChange }"
             :scroll="{ x: 'max-content' }"
