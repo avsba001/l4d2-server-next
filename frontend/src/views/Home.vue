@@ -453,55 +453,63 @@
 
           <!-- Actions (Desktop Right) -->
           <div class="hidden md:flex gap-2 shrink-0 w-full md:w-auto justify-end">
-            <a-tooltip title="设为管理员" v-if="isAdmin">
-              <a-button
-                type="primary"
-                ghost
-                shape="circle"
-                class="!flex !items-center !justify-center"
-                :disabled="!user.steamid"
-                @click="addAdmin(user.name, user.steamid)"
-              >
-                <PlusOutlined />
-              </a-button>
-            </a-tooltip>
-            <a-tooltip title="获取游戏时长">
-              <a-button
-                type="primary"
-                ghost
-                shape="circle"
-                class="!flex !items-center !justify-center"
-                :disabled="!user.steamid"
-                @click="getUserPlaytime(user.name, user.steamid)"
-              >
-                <ClockCircleOutlined />
-              </a-button>
-            </a-tooltip>
-            <a-tooltip title="踢出玩家">
-              <a-button
-                type="primary"
-                danger
-                ghost
-                shape="circle"
-                class="!flex !items-center !justify-center"
-                @click="kickUser(user.name, user.id)"
-              >
-                <KickIcon />
-              </a-button>
-            </a-tooltip>
-            <a-tooltip title="永久封禁">
-              <a-button
-                type="primary"
-                danger
-                ghost
-                shape="circle"
-                class="!flex !items-center !justify-center"
-                :disabled="!user.steamid"
-                @click="banUser(user.name, user.steamid)"
-              >
-                <StopOutlined />
-              </a-button>
-            </a-tooltip>
+            <div v-if="isAdmin">
+              <a-tooltip title="设为管理员">
+                <a-button
+                  type="primary"
+                  ghost
+                  shape="circle"
+                  class="!flex !items-center !justify-center"
+                  :disabled="!user.steamid"
+                  @click="addAdmin(user.name, user.steamid)"
+                >
+                  <PlusOutlined />
+                </a-button>
+              </a-tooltip>
+            </div>
+            <div>
+              <a-tooltip title="获取游戏时长">
+                <a-button
+                  type="primary"
+                  ghost
+                  shape="circle"
+                  class="!flex !items-center !justify-center"
+                  :disabled="!user.steamid"
+                  @click="getUserPlaytime(user.name, user.steamid)"
+                >
+                  <ClockCircleOutlined />
+                </a-button>
+              </a-tooltip>
+            </div>
+            <div>
+              <a-tooltip title="踢出玩家">
+                <a-button
+                  type="primary"
+                  danger
+                  ghost
+                  shape="circle"
+                  class="!flex !items-center !justify-center"
+                  @click="kickUser(user.name, user.id)"
+                >
+                  <KickIcon />
+                </a-button>
+              </a-tooltip>
+            </div>
+            <div>
+              <a-tooltip title="永久封禁">
+                <a-button
+                  type="primary"
+                  danger
+                  ghost
+                  shape="circle"
+                  class="!flex !items-center !justify-center"
+                  :disabled="!user.steamid"
+                  @click="banUser(user.name, user.steamid)"
+                >
+                  <StopOutlined />
+                </a-button>
+              </a-tooltip>
+            </div>
           </div>
         </div>
       </div>
