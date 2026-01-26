@@ -534,6 +534,32 @@ func DeletePlugin(name string) error {
 	return os.RemoveAll(pluginDir)
 }
 
+func EnablePlugins(names []string) error {
+	var errs []string
+	for _, name := range names {
+		if err := EnablePlugin(name); err != nil {
+			errs = append(errs, fmt.Sprintf("failed to enable %s: %v", name, err))
+		}
+	}
+	if len(errs) > 0 {
+		return fmt.Errorf("%s", strings.Join(errs, "; "))
+	}
+	return nil
+}
+
+func DisablePlugins(names []string) error {
+	var errs []string
+	for _, name := range names {
+		if err := DisablePlugin(name); err != nil {
+			errs = append(errs, fmt.Sprintf("failed to disable %s: %v", name, err))
+		}
+	}
+	if len(errs) > 0 {
+		return fmt.Errorf("%s", strings.Join(errs, "; "))
+	}
+	return nil
+}
+
 func copyFile(src, dst string) error {
 	sourceFile, err := os.Open(src)
 	if err != nil {

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-  import { ref, computed, onMounted, onErrorCaptured, reactive } from 'vue';
+  import { ref, computed, onMounted, onErrorCaptured, reactive, watch } from 'vue';
   import {
     message,
     Card as ACard,
@@ -176,6 +176,51 @@
     filterText.value = '';
   };
 
+  watch(activeTab, () => {
+    selectedRowKeys.value = [];
+  });
+
+  const handleBatchEnable = async () => {
+    if (selectedRowKeys.value.length === 0) return;
+
+    const hide = message.loading('正在批量启用插件...', 0);
+    try {
+      await api.enablePlugins(selectedRowKeys.value);
+      message.success(`成功启用 ${selectedRowKeys.value.length} 个插件`);
+      selectedRowKeys.value = [];
+      fetchPlugins();
+    } catch (error: any) {
+      message.error('批量启用失败: ' + error.message);
+      fetchPlugins();
+    } finally {
+      hide();
+    }
+  };
+
+  const handleBatchDisable = async () => {
+    if (selectedRowKeys.value.length === 0) return;
+
+    const hide = message.loading('正在批量禁用插件...', 0);
+    try {
+      await api.disablePlugins(selectedRowKeys.value);
+      message.success(`成功禁用 ${selectedRowKeys.value.length} 个插件`);
+      selectedRowKeys.value = [];
+      fetchPlugins();
+    } catch (error: any) {
+      message.error('批量禁用失败: ' + error.message);
+      fetchPlugins();
+    } finally {
+      hide();
+    }
+  };
+
+  const rowSelection = computed(() => {
+    return {
+      selectedRowKeys: selectedRowKeys.value,
+      onChange: onSelectChange,
+    };
+  });
+
   const handleBatchDelete = async () => {
     if (selectedRowKeys.value.length === 0) return;
 
@@ -299,7 +344,7 @@
                 allow-clear
                 @pressEnter="handleSearch"
               />
-              <div class="flex gap-2">
+              <div class="flex gap-2 w-full sm:w-auto">
                 <a-button
                   type="primary"
                   @click="handleSearch"
@@ -317,6 +362,19 @@
                 </a-button>
               </div>
             </div>
+
+            <div v-if="selectedRowKeys.length > 0 && authStore.isAdmin" class="flex gap-2">
+              <div>
+                <a-popconfirm
+                  title="确定要禁用选中的插件吗？"
+                  ok-text="确定"
+                  cancel-text="取消"
+                  @confirm="handleBatchDisable"
+                >
+                  <a-button danger>批量禁用 ({{ selectedRowKeys.length }})</a-button>
+                </a-popconfirm>
+              </div>
+            </div>
           </div>
 
           <a-table
@@ -327,6 +385,7 @@
             @change="handleEnabledTableChange"
             row-key="name"
             :scroll="{ x: 'max-content' }"
+            :row-selection="rowSelection"
           >
             <template #bodyCell="{ column, record }">
               <template v-if="column.key === 'name'">
@@ -383,7 +442,7 @@
                 allow-clear
                 @pressEnter="handleSearch"
               />
-              <div class="flex gap-2">
+              <div class="flex gap-2 w-full sm:w-auto">
                 <a-button
                   type="primary"
                   @click="handleSearch"
@@ -402,24 +461,32 @@
               </div>
             </div>
 
-            <div class="flex flex-wrap gap-2 w-full lg:w-auto">
-              <a-popconfirm
-                v-if="authStore.isAdmin"
-                title="确定要删除选中的插件吗？"
-                ok-text="确定"
-                cancel-text="取消"
-                @confirm="handleBatchDelete"
-                :disabled="selectedRowKeys.length === 0"
+            <div class="flex flex-col sm:flex-row gap-2 w-full lg:w-auto lg:items-center">
+              <div
+                v-if="selectedRowKeys.length > 0 && authStore.isAdmin"
+                class="flex gap-2 w-full sm:w-auto"
               >
-                <a-button
-                  danger
-                  :disabled="selectedRowKeys.length === 0"
-                  class="!flex !items-center !justify-center flex-1 sm:flex-none"
-                >
-                  <template #icon><DeleteOutlined /></template>
-                  批量删除
-                </a-button>
-              </a-popconfirm>
+                <div>
+                  <a-popconfirm
+                    title="确定要启用选中的插件吗？"
+                    ok-text="确定"
+                    cancel-text="取消"
+                    @confirm="handleBatchEnable"
+                  >
+                    <a-button type="primary">批量启用 ({{ selectedRowKeys.length }})</a-button>
+                  </a-popconfirm>
+                </div>
+                <div>
+                  <a-popconfirm
+                    title="确定要删除选中的插件吗？"
+                    ok-text="确定"
+                    cancel-text="取消"
+                    @confirm="handleBatchDelete"
+                  >
+                    <a-button danger>批量删除 ({{ selectedRowKeys.length }})</a-button>
+                  </a-popconfirm>
+                </div>
+              </div>
 
               <a-upload
                 v-if="authStore.isAdmin"
@@ -447,11 +514,11 @@
             :columns="disabledColumns"
             :data-source="filteredDisabledPlugins"
             :loading="loading"
-            @change="handleDisabledTableChange"
             :pagination="disabledPagination"
+            @change="handleDisabledTableChange"
             row-key="name"
-            :row-selection="{ selectedRowKeys: selectedRowKeys, onChange: onSelectChange }"
             :scroll="{ x: 'max-content' }"
+            :row-selection="rowSelection"
           >
             <template #bodyCell="{ column, record }">
               <template v-if="column.key === 'name'">
@@ -509,3 +576,23 @@
     <PluginConfigModal v-model:open="configModalVisible" :plugin-name="currentConfigPlugin" />
   </div>
 </template>
+
+<style scoped>
+  /* 修复 Popconfirm 按钮在 flex 容器中换行的问题 */
+  :deep(.ant-popconfirm-buttons) {
+    display: flex;
+    justify-content: flex-end; /* 按钮靠右对齐 */
+    flex-wrap: nowrap;
+    gap: 8px;
+    white-space: nowrap;
+  }
+
+  :deep(.ant-popconfirm-buttons button) {
+    margin-left: 0 !important;
+  }
+
+  /* 防止 Popconfirm 文字换行跳动 */
+  :deep(.ant-popconfirm-message) {
+    white-space: nowrap;
+  }
+</style>

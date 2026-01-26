@@ -114,3 +114,57 @@ func DeletePlugin(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "Plugin deleted successfully"})
 }
+
+type BatchPluginRequest struct {
+	Names []string `json:"names"`
+}
+
+func EnablePlugins(c *gin.Context) {
+	role, _ := c.Get("role")
+	if role != "admin" {
+		c.JSON(http.StatusForbidden, gin.H{"error": "需要管理员权限"})
+		return
+	}
+
+	var req BatchPluginRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
+		return
+	}
+
+	if len(req.Names) == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "names is required"})
+		return
+	}
+
+	if err := logic.EnablePlugins(req.Names); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Plugins enabled successfully"})
+}
+
+func DisablePlugins(c *gin.Context) {
+	role, _ := c.Get("role")
+	if role != "admin" {
+		c.JSON(http.StatusForbidden, gin.H{"error": "需要管理员权限"})
+		return
+	}
+
+	var req BatchPluginRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
+		return
+	}
+
+	if len(req.Names) == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "names is required"})
+		return
+	}
+
+	if err := logic.DisablePlugins(req.Names); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Plugins disabled successfully"})
+}
