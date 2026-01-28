@@ -20,5 +20,7 @@ FROM docker:29.1.1-cli-alpine3.22
 EXPOSE 27020
 COPY ./plugins /plugins
 COPY --from=builder /app/l4d2-manager /
+COPY --from=builder /app/backend/ip2region_v4.xdb /
+COPY --from=builder /app/backend/ip2region_v6.xdb /
 COPY --from=web-builder /app/backend/static /static
 ENTRYPOINT ["/l4d2-manager"]

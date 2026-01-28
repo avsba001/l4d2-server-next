@@ -12,6 +12,7 @@ require (
 	github.com/go-resty/resty/v2 v2.16.5
 	github.com/golang-jwt/jwt/v5 v5.3.0
 	github.com/gorcon/rcon v1.3.5
+	github.com/lionsoul2014/ip2region/binding/golang v0.0.0-20260127105604-ad0cfd6bd94f
 	github.com/nwaples/rardecode v1.1.3
 	github.com/panjf2000/ants/v2 v2.11.4
 	github.com/shirou/gopsutil/v3 v3.24.5

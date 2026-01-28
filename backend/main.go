@@ -22,6 +22,14 @@ func main() {
 
 	router := gin.Default()
 
+	// Initialize GeoIP if enabled (REGION_WHITE_LIST is set)
+	if os.Getenv("REGION_WHITE_LIST") != "" {
+		if middlewares.InitGeoIP("./ip2region_v4.xdb", "./ip2region_v6.xdb") {
+			defer middlewares.CloseGeoIP()
+			router.Use(middlewares.BlockForeignIPs())
+		}
+	}
+
 	// Static files cache middleware
 	router.Use(func(c *gin.Context) {
 		path := c.Request.URL.Path
