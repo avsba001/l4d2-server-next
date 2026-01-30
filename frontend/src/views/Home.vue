@@ -175,8 +175,13 @@
     }
     try {
       const data = await api.getUserPlaytime(steamId);
-      const hours = Math.round(data.playtime * 10) / 10;
-      message.info(`${userName} 的游戏时长: ${hours} 小时`);
+      const totalHours = data.total_playtime ? Math.round(data.total_playtime * 10) / 10 : 0;
+      const realHours = data.real_playtime ? Math.round(data.real_playtime * 10) / 10 : 0;
+
+      const totalTimeText = totalHours > 0 ? `${totalHours} 小时` : '未公开';
+      const realTimeText = realHours > 0 ? `${realHours} 小时` : '未公开';
+
+      message.info(`${userName} 的游戏时长: 总时长 ${totalTimeText} / 实战时长 ${realTimeText}`);
     } catch (e: any) {
       message.error('获取时长失败: ' + (e.message || '未知错误'));
     }
