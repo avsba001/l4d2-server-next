@@ -114,10 +114,7 @@ func BlockForeignIPs() gin.HandlerFunc {
 
 		// Log the blocked attempt
 		fmt.Printf("Blocked IP: %s, Region: %s\n", ip, region)
-		c.AbortWithStatusJSON(http.StatusForbidden, gin.H{
-			"error":  "Access denied: Region not allowed",
-			"region": region,
-		})
+		c.AbortWithStatus(http.StatusForbidden)
 	}
 }
 
