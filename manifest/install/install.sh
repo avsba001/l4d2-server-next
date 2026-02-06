@@ -60,8 +60,8 @@ services:
     container_name: l4d2
     restart: unless-stopped
     ports:
-      - "$game_port:27015"
-      - "$game_port:27015/udp"
+      - "$game_port:$game_port"
+      - "$game_port:$game_port/udp"
     volumes:
       - l4d2-data:/l4d2/left4dead2
       - /etc/localtime:/etc/localtime:ro
@@ -70,6 +70,7 @@ services:
       - l4d2-network
     environment:
       - L4D2_TICK=100 # 30,60,100
+      - L4D2_PORT=$game_port
       - L4D2_RCON_PASSWORD=$L4D2_RCON_PASSWORD
     logging:
       options:
