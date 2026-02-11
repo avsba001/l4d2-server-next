@@ -7,3 +7,4 @@ private.key
 *.db
 *.db-shm
 *.db-wal
+__debug_*

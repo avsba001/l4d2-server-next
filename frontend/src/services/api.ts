@@ -429,6 +429,23 @@ class ApiService {
     if (!response.ok) throw new Error(await response.text());
     return response.json();
   }
+
+  async getServerConfig() {
+    const response = await this.post('/server-config/get');
+    if (!response.ok) throw new Error(await response.text());
+    return response.json();
+  }
+
+  async updateServerConfig(data: {
+    hidden: boolean;
+    lobby_connect_only: boolean;
+    steam_group: string;
+    custom_config: string[];
+  }) {
+    const response = await this.postJson('/server-config/update', data);
+    if (!response.ok) throw new Error(await response.text());
+    return response.json();
+  }
 }
 
 export const api = new ApiService();

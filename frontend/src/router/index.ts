@@ -11,6 +11,7 @@ const Plugins = () => import('../views/Plugins.vue');
 const Monitor = () => import('../views/Monitor.vue');
 const Admins = () => import('../views/Admins.vue');
 const ServerInfo = () => import('../views/ServerInfo.vue');
+const ServerConfig = () => import('../views/ServerConfig.vue');
 
 const router = createRouter({
   history: createWebHashHistory(),
@@ -65,6 +66,11 @@ const router = createRouter({
           path: 'server-info',
           name: 'ServerInfo',
           component: ServerInfo,
+        },
+        {
+          path: 'server-config',
+          name: 'ServerConfig',
+          component: ServerConfig,
         },
       ],
     },

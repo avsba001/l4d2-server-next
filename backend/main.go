@@ -107,6 +107,8 @@ func main() {
 	router.POST("/rcon", middlewares.Auth(privateKey), controller.Rcon)
 	router.POST("/server-info/get", middlewares.Auth(privateKey), controller.GetServerInfo)
 	router.POST("/server-info/update", middlewares.Auth(privateKey), controller.UpdateServerInfo)
+	router.POST("/server-config/get", middlewares.Auth(privateKey), controller.GetServerConfig)
+	router.POST("/server-config/update", middlewares.Auth(privateKey), controller.UpdateServerConfig)
 	router.POST("/getVersion", controller.GetVersion)
 
 	plugins := router.Group("/plugins", middlewares.Auth(privateKey))
