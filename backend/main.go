@@ -71,8 +71,13 @@ func main() {
 	}
 
 	router.MaxMultipartMemory = 1 << 25 // 限制表单内存缓存为32M
-	router.POST("/auth", middlewares.Auth(privateKey), controller.Auth)
-	router.POST("/auth/getTempAuthCode", middlewares.Auth(privateKey), controller.GetTempAuthCode)
+
+	// Auth Group
+	auth := router.Group("/auth", middlewares.Auth(privateKey))
+	{
+		auth.POST("", controller.Auth)
+		auth.POST("/getTempAuthCode", controller.GetTempAuthCode)
+	}
 
 	// Self-service Auth (Inject privateKey without full Auth check)
 	injectKey := func(c *gin.Context) {
@@ -83,34 +88,61 @@ func main() {
 	router.POST("/self-service/generate", injectKey, controller.GenerateSelfServiceCode)
 	router.POST("/config/self-service", middlewares.Auth(privateKey), controller.SetSelfServiceConfig)
 
+	// Root Level Protected Routes (Misc)
 	router.POST("/upload", middlewares.Auth(privateKey), controller.Upload)
 	router.POST("/restart", middlewares.Auth(privateKey), controller.Restart)
 	router.POST("/clear", middlewares.Auth(privateKey), controller.Clear)
-	router.POST("/list", controller.List)
+	router.POST("/list", middlewares.Auth(privateKey), controller.List)
 	router.POST("/remove", middlewares.Auth(privateKey), controller.Remove)
-	router.POST("/rcon/maplist", middlewares.Auth(privateKey), controller.GetRconMapList)
-	router.POST("/rcon/changemap", middlewares.Auth(privateKey), controller.ChangeMap)
-	router.POST("/rcon/getstatus", middlewares.Auth(privateKey), controller.GetStatus)
-	router.POST("/rcon/kickuser", middlewares.Auth(privateKey), controller.KickUser)
-	router.POST("/rcon/banuser", middlewares.Auth(privateKey), controller.BanUser)
-	router.POST("/rcon/changedifficulty", middlewares.Auth(privateKey), controller.ChangeDifficulty)
-	router.POST("/rcon/changegamemode", middlewares.Auth(privateKey), controller.ChangeGameMode)
-	router.POST("/download/add", middlewares.Auth(privateKey), controller.AddDownloadTask)
-	router.POST("/download/clear", middlewares.Auth(privateKey), controller.ClearTasks)
-	router.POST("/download/list", middlewares.Auth(privateKey), controller.GetDownloadTasksInfo)
-	router.POST("/download/cancel", middlewares.Auth(privateKey), controller.CancelDownloadTask)
-	router.POST("/download/restart", middlewares.Auth(privateKey), controller.RestartDownloadTask)
 	router.POST("/getUserPlaytime", middlewares.Auth(privateKey), controller.GetUserPlaytime)
-	router.POST("/monitor/status", middlewares.Auth(privateKey), controller.GetMonitorStatus)
-	router.POST("/monitor/config", middlewares.Auth(privateKey), controller.GetMonitorConfig)
-	router.POST("/monitor/history", middlewares.Auth(privateKey), controller.GetMonitorHistory)
-	router.POST("/rcon", middlewares.Auth(privateKey), controller.Rcon)
-	router.POST("/server-info/get", middlewares.Auth(privateKey), controller.GetServerInfo)
-	router.POST("/server-info/update", middlewares.Auth(privateKey), controller.UpdateServerInfo)
-	router.POST("/server-config/get", middlewares.Auth(privateKey), controller.GetServerConfig)
-	router.POST("/server-config/update", middlewares.Auth(privateKey), controller.UpdateServerConfig)
-	router.POST("/getVersion", controller.GetVersion)
+	router.POST("/getVersion", controller.GetVersion) // Public
 
+	// RCON Group
+	rcon := router.Group("/rcon", middlewares.Auth(privateKey))
+	{
+		rcon.POST("", controller.Rcon) //
+		rcon.POST("/maplist", controller.GetRconMapList)
+		rcon.POST("/changemap", controller.ChangeMap)
+		rcon.POST("/getstatus", controller.GetStatus)
+		rcon.POST("/kickuser", controller.KickUser)
+		rcon.POST("/banuser", controller.BanUser)
+		rcon.POST("/changedifficulty", controller.ChangeDifficulty)
+		rcon.POST("/changegamemode", controller.ChangeGameMode)
+	}
+
+	// Download Group
+	download := router.Group("/download", middlewares.Auth(privateKey))
+	{
+		download.POST("/add", controller.AddDownloadTask)
+		download.POST("/clear", controller.ClearTasks)
+		download.POST("/list", controller.GetDownloadTasksInfo)
+		download.POST("/cancel", controller.CancelDownloadTask)
+		download.POST("/restart", controller.RestartDownloadTask)
+	}
+
+	// Monitor Group
+	monitor := router.Group("/monitor", middlewares.Auth(privateKey))
+	{
+		monitor.POST("/status", controller.GetMonitorStatus)
+		monitor.POST("/config", controller.GetMonitorConfig)
+		monitor.POST("/history", controller.GetMonitorHistory)
+	}
+
+	// Server Info Group
+	serverInfo := router.Group("/server-info", middlewares.Auth(privateKey))
+	{
+		serverInfo.POST("/get", controller.GetServerInfo)
+		serverInfo.POST("/update", controller.UpdateServerInfo)
+	}
+
+	// Server Config Group
+	serverConfig := router.Group("/server-config", middlewares.Auth(privateKey))
+	{
+		serverConfig.POST("/get", controller.GetServerConfig)
+		serverConfig.POST("/update", controller.UpdateServerConfig)
+	}
+
+	// Plugins Group
 	plugins := router.Group("/plugins", middlewares.Auth(privateKey))
 	{
 		plugins.POST("/list", controller.GetPlugins)
@@ -124,6 +156,7 @@ func main() {
 		plugins.POST("/config/update", controller.UpdatePluginConfig)
 	}
 
+	// Admins Group
 	admins := router.Group("/admins", middlewares.Auth(privateKey))
 	{
 		admins.POST("/list", controller.GetAdmins)
