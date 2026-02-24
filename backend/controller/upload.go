@@ -46,7 +46,7 @@ func Upload(c *gin.Context) {
 	// 处理zip文件
 	if zipReg.Match([]byte(file.Filename)) {
 		if err := handleZipFile(c, file); err != nil {
-			c.String(http.StatusInternalServerError, err.Error())
+			c.String(http.StatusInternalServerError, "解压Zip失败: %v", err)
 			return
 		}
 		c.String(http.StatusOK, "上传并解压成功！")
@@ -57,7 +57,7 @@ func Upload(c *gin.Context) {
 	// 处理rar文件
 	if rarReg.Match([]byte(file.Filename)) {
 		if err := handleRarFile(c, file); err != nil {
-			c.String(http.StatusInternalServerError, err.Error())
+			c.String(http.StatusInternalServerError, "解压Rar失败: %v", err)
 			return
 		}
 		c.String(http.StatusOK, "上传并解压成功！")
@@ -68,7 +68,7 @@ func Upload(c *gin.Context) {
 	// 处理7z文件
 	if sevenZipReg.Match([]byte(file.Filename)) {
 		if err := handle7zFile(c, file); err != nil {
-			c.String(http.StatusInternalServerError, err.Error())
+			c.String(http.StatusInternalServerError, "解压7z失败: %v", err)
 			return
 		}
 		c.String(http.StatusOK, "上传并解压成功！")
@@ -82,21 +82,21 @@ func Upload(c *gin.Context) {
 
 	// 检查文件是否已存在
 	if err := checkMapExists(cleanFilename); err != nil {
-		c.String(http.StatusBadRequest, err.Error())
+		c.String(http.StatusBadRequest, "检查文件失败: %v", err)
 		return
 	}
 
 	// 保存上传的文件
 	tempPath := filepath.Join(consts.AddonsBasePath, "temp_"+cleanFilename)
 	if err := c.SaveUploadedFile(file, tempPath); err != nil {
-		c.String(http.StatusInternalServerError, "文件写入失败")
+		c.String(http.StatusInternalServerError, "文件写入失败: %v", err)
 		return
 	}
 
 	// 使用共用的文件处理方法
 	if err := ProcessVpkFile(tempPath); err != nil {
 		os.Remove(tempPath) // 清理临时文件
-		c.String(http.StatusInternalServerError, err.Error())
+		c.String(http.StatusInternalServerError, "处理文件失败: %v", err)
 		return
 	}
 

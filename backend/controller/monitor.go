@@ -228,12 +228,12 @@ func GetMonitorHistory(c *gin.Context) {
 	// 鉴权：只有管理员才能查看历史数据
 	role, _ := c.Get("role")
 	if role != "admin" {
-		c.JSON(http.StatusForbidden, gin.H{"error": "需要管理员权限才能查看历史数据"})
+		c.String(http.StatusForbidden, "需要管理员权限才能查看历史数据")
 		return
 	}
 
 	if db.DB == nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "History metrics are disabled"})
+		c.String(http.StatusBadRequest, "历史数据记录未启用")
 		return
 	}
 
@@ -243,7 +243,7 @@ func GetMonitorHistory(c *gin.Context) {
 	end, _ := strconv.ParseInt(endStr, 10, 64)
 
 	if start == 0 || end == 0 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid start or end timestamp"})
+		c.String(http.StatusBadRequest, "无效的开始或结束时间")
 		return
 	}
 
@@ -251,7 +251,7 @@ func GetMonitorHistory(c *gin.Context) {
 	var count int64
 	err := db.DB.Model(&model.SystemMetric{}).Where("timestamp >= ? AND timestamp <= ?", start, end).Count(&count).Error
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.String(http.StatusInternalServerError, "查询数据库失败: %v", err)
 		return
 	}
 
@@ -274,7 +274,7 @@ func GetMonitorHistory(c *gin.Context) {
 		var rawData []model.SystemMetric
 		err = db.DB.Where("timestamp >= ? AND timestamp <= ?", start, end).Order("timestamp ASC").Find(&rawData).Error
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			c.String(http.StatusInternalServerError, "查询原始数据失败: %v", err)
 			return
 		}
 		// 转换为 Result 格式
@@ -336,7 +336,7 @@ func GetMonitorHistory(c *gin.Context) {
 		Scan(&results).Error
 
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.String(http.StatusInternalServerError, "聚合查询失败: %v", err)
 		return
 	}
 

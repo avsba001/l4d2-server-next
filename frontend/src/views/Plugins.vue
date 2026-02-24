@@ -10,6 +10,8 @@
     Table as ATable,
     Popconfirm as APopconfirm,
     Upload as AUpload,
+    RadioGroup as ARadioGroup,
+    Alert as AAlert,
   } from 'ant-design-vue';
   import {
     UploadOutlined,
@@ -46,6 +48,46 @@
   const currentConfigPlugin = ref('');
   const pendingFiles = ref<File[]>([]);
   let uploadTimer: any = null;
+
+  const presetModalVisible = ref(false);
+  const presets = ref<any[]>([]);
+  const selectedPreset = ref('');
+  const applyingPreset = ref(false);
+  const footerContainerRef = ref<HTMLElement | null>(null);
+
+  const getPopupContainer = (trigger: HTMLElement) => {
+    return footerContainerRef.value || trigger || document.body;
+  };
+
+  const openPresetModal = async () => {
+    try {
+      const data = await api.getPresets();
+      presets.value = data || [];
+      selectedPreset.value = '';
+      presetModalVisible.value = true;
+    } catch (error: any) {
+      message.error('获取预设列表失败: ' + error.message);
+    }
+  };
+
+  const confirmApplyPreset = async () => {
+    if (!selectedPreset.value) {
+      message.warning('请选择一个预设');
+      return;
+    }
+
+    applyingPreset.value = true;
+    try {
+      await api.applyPreset(selectedPreset.value);
+      message.success('预设应用成功');
+      presetModalVisible.value = false;
+      fetchPlugins();
+    } catch (error: any) {
+      message.error('应用预设失败: ' + error.message);
+    } finally {
+      applyingPreset.value = false;
+    }
+  };
 
   onErrorCaptured((err) => {
     console.error('Plugins.vue Error:', err);
@@ -318,15 +360,27 @@
         <h1 class="text-2xl font-bold text-gray-800 dark:text-gray-100">插件管理</h1>
         <p class="text-gray-500 dark:text-gray-400 mt-1">管理服务器插件和模组</p>
       </div>
-      <a-button
-        type="default"
-        @click="fetchPlugins"
-        :loading="loading"
-        class="!flex !items-center !justify-center"
-      >
-        <template #icon><SyncOutlined /></template>
-        刷新列表
-      </a-button>
+      <div class="flex gap-2">
+        <a-button
+          v-if="authStore.isAdmin"
+          type="primary"
+          ghost
+          @click="openPresetModal"
+          class="!flex !items-center !justify-center"
+        >
+          <template #icon><SettingOutlined /></template>
+          应用预设
+        </a-button>
+        <a-button
+          type="default"
+          @click="fetchPlugins"
+          :loading="loading"
+          class="!flex !items-center !justify-center"
+        >
+          <template #icon><SyncOutlined /></template>
+          刷新列表
+        </a-button>
+      </div>
     </div>
 
     <a-card :bordered="false" class="shadow-sm dark:bg-gray-800">
@@ -573,6 +627,60 @@
       </a-tabs>
     </a-card>
 
+    <a-modal
+      v-model:open="presetModalVisible"
+      title="选择插件预设"
+      :confirm-loading="applyingPreset"
+      ok-text="应用"
+      cancel-text="取消"
+      :width="600"
+    >
+      <template #footer>
+        <div class="flex justify-end gap-2" ref="footerContainerRef">
+          <a-button @click="presetModalVisible = false">取消</a-button>
+          <a-popconfirm
+            title="此操作将重置所有插件状态，确定要继续吗？"
+            ok-text="确定"
+            cancel-text="取消"
+            @confirm="confirmApplyPreset"
+            :getPopupContainer="getPopupContainer"
+          >
+            <a-button type="primary" :loading="applyingPreset">应用</a-button>
+          </a-popconfirm>
+        </div>
+      </template>
+      <a-alert
+        message="注意"
+        description="应用预设将重置所有插件状态，禁用当前所有插件并按预设启用。配置项也会被覆盖。"
+        type="warning"
+        show-icon
+        class="mb-6"
+      />
+      <div v-if="presets.length === 0" class="text-center py-4 text-gray-500">暂无可用预设</div>
+      <div class="flex flex-col gap-2 max-h-[60vh] overflow-y-auto mt-6">
+        <a-radio-group v-model:value="selectedPreset" button-style="solid" class="w-full">
+          <div class="flex flex-col gap-3">
+            <a-radio-button
+              v-for="preset in presets"
+              :key="preset.name"
+              :value="preset.name"
+              class="!h-auto !py-3 !px-4 !flex !items-center !rounded-md !border !border-gray-200 dark:!border-gray-700 hover:!border-blue-500 transition-all"
+            >
+              <div class="flex flex-col text-left">
+                <span class="font-medium text-base">{{ preset.name }}</span>
+                <span
+                  class="text-xs mt-1"
+                  :class="selectedPreset === preset.name ? 'text-blue-100' : 'text-gray-500'"
+                >
+                  包含 {{ preset.plugin_count || 0 }} 个插件
+                </span>
+              </div>
+            </a-radio-button>
+          </div>
+        </a-radio-group>
+      </div>
+    </a-modal>
+
     <PluginConfigModal v-model:open="configModalVisible" :plugin-name="currentConfigPlugin" />
   </div>
 </template>
@@ -594,5 +702,15 @@
   /* 防止 Popconfirm 文字换行跳动 */
   :deep(.ant-popconfirm-message) {
     white-space: nowrap;
+  }
+
+  /* 修复 RadioButton 垂直排列时的边框问题 */
+  :deep(.ant-radio-button-wrapper) {
+    margin-right: 0 !important;
+    border-left-width: 1px !important;
+  }
+
+  :deep(.ant-radio-button-wrapper:not(:first-child)::before) {
+    display: none !important;
   }
 </style>

@@ -6,7 +6,6 @@ preset:
     plugins:
       - name: 必选-功能类插件(原生键值函数库)(v0.4)(fdxx)
       - name: 必选-功能类插件(WeaponHandling)(v1.0.6)(Lux)
-      - name: 必选-功能类插件(原生键值函数库)(v0.4)(fdxx)
       - name: 必选-功能类插件(原生投票函数库)(v0.4)(Powerlord, fdxx)
       - name: 必选-功能类扩展(sourcescramble.ext)(v0.7.1.4)
       - name: 必选-修复类(v1.1)(修复部分梯子导致的崩溃)(SilverShot and Peace-Maker)
@@ -79,7 +78,7 @@ preset:
         configs:
           - name: l4d2_tank_damage.cfg
             values:
-              l4d2_tank_damage.cfg: "10"
+              l4d2_tank_damage: "10"
       - name: 自选-坦克特感女巫血量显示和坦克死亡提示(v1.0.4)(NiCo-op, Edited By Ernecio (Satanael))
       - name: 自选-玩家自杀指令(v1.1.4)(豆瓣酱な)
         configs:
@@ -101,7 +100,6 @@ preset:
     plugins:
       - name: 必选-功能类插件(原生键值函数库)(v0.4)(fdxx)
       - name: 必选-功能类插件(WeaponHandling)(v1.0.6)(Lux)
-      - name: 必选-功能类插件(原生键值函数库)(v0.4)(fdxx)
       - name: 必选-功能类插件(原生投票函数库)(v0.4)(Powerlord, fdxx)
       - name: 必选-功能类扩展(sourcescramble.ext)(v0.7.1.4)
       - name: 必选-修复类(v1.1)(修复部分梯子导致的崩溃)(SilverShot and Peace-Maker)
@@ -200,7 +198,7 @@ preset:
         configs:
           - name: l4d2_tank_damage.cfg
             values:
-              l4d2_tank_damage.cfg: "10"
+              l4d2_tank_damage: "10"
       - name: 自选-坦克特感女巫血量显示和坦克死亡提示(v1.0.4)(NiCo-op, Edited By Ernecio (Satanael))
       - name: 自选-玩家自杀指令(v1.1.4)(豆瓣酱な)
         configs:
@@ -229,7 +227,6 @@ preset:
     plugins:
       - name: 必选-功能类插件(原生键值函数库)(v0.4)(fdxx)
       - name: 必选-功能类插件(WeaponHandling)(v1.0.6)(Lux)
-      - name: 必选-功能类插件(原生键值函数库)(v0.4)(fdxx)
       - name: 必选-功能类插件(原生投票函数库)(v0.4)(Powerlord, fdxx)
       - name: 必选-功能类扩展(sourcescramble.ext)(v0.7.1.4)
       - name: 必选-修复类(v1.1)(修复部分梯子导致的崩溃)(SilverShot and Peace-Maker)

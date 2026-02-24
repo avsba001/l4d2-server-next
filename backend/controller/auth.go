@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"fmt"
 	"log"
 	"time"
 
@@ -73,16 +72,14 @@ func GenerateSelfServiceCode(c *gin.Context) {
 	config := logic.GetSelfServiceConfig()
 
 	if !config.EnableSelfService {
-		c.JSON(403, gin.H{"error": "自助授权功能未开启"})
+		c.String(403, "自助授权功能未开启")
 		return
 	}
 
 	elapsed := time.Since(config.LastSelfServiceTime)
 	if elapsed < time.Hour {
-		c.JSON(429, gin.H{
-			"error":     "系统冷却中",
-			"remaining": int((time.Hour - elapsed).Seconds()),
-		})
+		remaining := int((time.Hour - elapsed).Seconds())
+		c.String(429, "系统冷却中，请等待 %d 秒", remaining)
 		return
 	}
 
@@ -98,7 +95,7 @@ func GenerateSelfServiceCode(c *gin.Context) {
 	if !exist {
 		// 如果没有 privateKey，尝试从文件读取或者报错
 		// 这里为了简单，假设 main.go 会调整以注入 key
-		c.JSON(500, gin.H{"error": "系统配置错误: 密钥缺失"})
+		c.String(500, "系统配置错误: 密钥缺失")
 		return
 	}
 
@@ -112,12 +109,12 @@ func GenerateSelfServiceCode(c *gin.Context) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	tokenString, err := token.SignedString(privateKey) // privateKey 应该是 []byte
 	if err != nil {
-		c.JSON(500, gin.H{"error": fmt.Sprintf("生成授权码失败: %v", err)})
+		c.String(500, "生成授权码失败: %v", err)
 		return
 	}
 
 	if err := logic.UpdateLastSelfServiceTime(); err != nil {
-		c.JSON(500, gin.H{"error": "保存状态失败"})
+		c.String(500, "保存状态失败")
 		return
 	}
 
@@ -132,7 +129,7 @@ func GenerateSelfServiceCode(c *gin.Context) {
 func SetSelfServiceConfig(c *gin.Context) {
 	role, _ := c.Get("role")
 	if role != "admin" {
-		c.JSON(403, gin.H{"error": "需要管理员权限"})
+		c.String(403, "需要管理员权限")
 		return
 	}
 
@@ -140,12 +137,12 @@ func SetSelfServiceConfig(c *gin.Context) {
 		Enable bool `json:"enable"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(400, gin.H{"error": "参数错误"})
+		c.String(400, "参数错误")
 		return
 	}
 
 	if err := logic.SetSelfServiceEnable(req.Enable); err != nil {
-		c.JSON(500, gin.H{"error": err.Error()})
+		c.String(500, "保存配置失败: %v", err)
 		return
 	}
 

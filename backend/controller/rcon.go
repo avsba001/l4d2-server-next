@@ -26,7 +26,7 @@ func ChangeMap(c *gin.Context) {
 
 	conn, err := getRconConnection()
 	if err != nil {
-		c.String(http.StatusInternalServerError, err.Error())
+		c.String(http.StatusInternalServerError, "连接RCON失败: %v", err)
 		return
 	}
 	defer conn.Close()
@@ -42,7 +42,7 @@ func ChangeMap(c *gin.Context) {
 func GetStatus(c *gin.Context) {
 	conn, err := getRconConnection()
 	if err != nil {
-		c.String(http.StatusInternalServerError, err.Error())
+		c.String(http.StatusInternalServerError, "连接RCON失败: %v", err)
 		return
 	}
 	defer conn.Close()
@@ -310,7 +310,7 @@ func KickUser(c *gin.Context) {
 
 	conn, err := getRconConnection()
 	if err != nil {
-		c.String(http.StatusInternalServerError, err.Error())
+		c.String(http.StatusInternalServerError, "连接RCON失败: %v", err)
 		return
 	}
 	defer conn.Close()
@@ -344,7 +344,7 @@ func BanUser(c *gin.Context) {
 
 	conn, err := getRconConnection()
 	if err != nil {
-		c.String(http.StatusInternalServerError, err.Error())
+		c.String(http.StatusInternalServerError, "连接RCON失败: %v", err)
 		return
 	}
 	defer conn.Close()
@@ -396,7 +396,7 @@ func ChangeDifficulty(c *gin.Context) {
 
 	conn, err := getRconConnection()
 	if err != nil {
-		c.String(http.StatusInternalServerError, err.Error())
+		c.String(http.StatusInternalServerError, "连接RCON失败: %v", err)
 		return
 	}
 	defer conn.Close()
@@ -459,7 +459,7 @@ func ChangeGameMode(c *gin.Context) {
 
 	conn, err := getRconConnection()
 	if err != nil {
-		c.String(http.StatusInternalServerError, err.Error())
+		c.String(http.StatusInternalServerError, "连接RCON失败: %v", err)
 		return
 	}
 	defer conn.Close()
@@ -481,7 +481,7 @@ func Rcon(c *gin.Context) {
 
 	conn, err := getRconConnection()
 	if err != nil {
-		c.String(http.StatusInternalServerError, err.Error())
+		c.String(http.StatusInternalServerError, "连接RCON失败: %v", err)
 		return
 	}
 	defer conn.Close()

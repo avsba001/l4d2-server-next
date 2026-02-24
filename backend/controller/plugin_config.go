@@ -10,13 +10,13 @@ import (
 func GetPluginConfig(c *gin.Context) {
 	pluginName := c.PostForm("name")
 	if pluginName == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "plugin name is required"})
+		c.String(http.StatusBadRequest, "插件名称不能为空")
 		return
 	}
 
 	configs, err := logic.GetPluginConfigs(pluginName)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.String(http.StatusInternalServerError, "获取插件配置失败: %v", err)
 		return
 	}
 
@@ -31,18 +31,18 @@ type UpdateConfigRequest struct {
 func UpdatePluginConfig(c *gin.Context) {
 	role, _ := c.Get("role")
 	if role != "admin" {
-		c.JSON(http.StatusForbidden, gin.H{"error": "需要管理员权限"})
+		c.String(http.StatusForbidden, "需要管理员权限")
 		return
 	}
 
 	var req UpdateConfigRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
+		c.String(http.StatusBadRequest, "无效的请求格式")
 		return
 	}
 
 	if err := logic.SavePluginConfig(req.ConfigName, req.Updates); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.String(http.StatusInternalServerError, "保存配置失败: %v", err)
 		return
 	}
 

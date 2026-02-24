@@ -14,36 +14,40 @@ func GetAdmins(c *gin.Context) {
 		// Requirement says: "if file not exists, prompt to enable sourcemod"
 		// ParseAdminsSimple returns error for this.
 		if err.Error() == "SourceMod 未启用或配置文件不存在" {
-			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+			c.String(http.StatusNotFound, err.Error())
 			return
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.String(http.StatusInternalServerError, "获取管理员列表失败: %v", err)
 		return
 	}
 	c.JSON(http.StatusOK, admins)
 }
 
 type AddAdminRequest struct {
-	SteamID string `json:"steamid" binding:"required"`
+	SteamID string `json:"steamid"`
 	Remark  string `json:"remark"`
 }
 
 func AddAdmin(c *gin.Context) {
-	// Check Permission
 	role, _ := c.Get("role")
 	if role != "admin" {
-		c.JSON(http.StatusForbidden, gin.H{"error": "权限不足，仅管理员可操作"})
+		c.String(http.StatusForbidden, "需要管理员权限")
 		return
 	}
 
 	var req AddAdminRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "无效的请求参数"})
+		c.String(http.StatusBadRequest, "无效的请求格式")
+		return
+	}
+
+	if req.SteamID == "" {
+		c.String(http.StatusBadRequest, "SteamID 不能为空")
 		return
 	}
 
 	if err := logic.AddAdmin(req.SteamID, req.Remark); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.String(http.StatusInternalServerError, "添加管理员失败: %v", err)
 		return
 	}
 
@@ -51,25 +55,29 @@ func AddAdmin(c *gin.Context) {
 }
 
 type DeleteAdminRequest struct {
-	SteamID string `json:"steamid" binding:"required"`
+	SteamID string `json:"steamid"`
 }
 
 func DeleteAdmin(c *gin.Context) {
-	// Check Permission
 	role, _ := c.Get("role")
 	if role != "admin" {
-		c.JSON(http.StatusForbidden, gin.H{"error": "权限不足，仅管理员可操作"})
+		c.String(http.StatusForbidden, "需要管理员权限")
 		return
 	}
 
 	var req DeleteAdminRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "无效的请求参数"})
+		c.String(http.StatusBadRequest, "无效的请求格式")
+		return
+	}
+
+	if req.SteamID == "" {
+		c.String(http.StatusBadRequest, "SteamID 不能为空")
 		return
 	}
 
 	if err := logic.DeleteAdmin(req.SteamID); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.String(http.StatusInternalServerError, "删除管理员失败: %v", err)
 		return
 	}
 

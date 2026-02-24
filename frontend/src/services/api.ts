@@ -193,6 +193,18 @@ class ApiService {
     return response.json();
   }
 
+  async getPresets() {
+    const response = await this.post('/plugins/presets');
+    if (!response.ok) throw new Error(await response.text());
+    return response.json();
+  }
+
+  async applyPreset(name: string) {
+    const response = await this.post('/plugins/apply-preset', { name });
+    if (!response.ok) throw new Error(await response.text());
+    return response.json();
+  }
+
   async clearMaps() {
     const response = await this.post('/clear');
     if (!response.ok) throw new Error(await response.text());

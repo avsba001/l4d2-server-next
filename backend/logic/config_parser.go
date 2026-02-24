@@ -144,3 +144,47 @@ func UpdateSourceModConfig(path string, updates map[string]string) error {
 	output := strings.Join(newLines, "\n")
 	return os.WriteFile(path, []byte(output), 0644)
 }
+
+func UpdateOrCreateSourceModConfig(path string, updates map[string]string) error {
+	// Read file if exists
+	var lines []string
+	if _, err := os.Stat(path); err == nil {
+		content, err := os.ReadFile(path)
+		if err != nil {
+			return err
+		}
+		lines = strings.Split(string(content), "\n")
+	}
+
+	var newLines []string
+	updatedKeys := make(map[string]bool)
+
+	for _, line := range lines {
+		trimmed := strings.TrimSpace(line)
+		
+		// If line is a cvar definition
+		matches := cvarRegex.FindStringSubmatch(trimmed)
+		if len(matches) == 3 && !strings.HasPrefix(trimmed, "//") {
+			name := matches[1]
+			// Check if we have an update for this cvar
+			if newValue, ok := updates[name]; ok {
+				newLines = append(newLines, fmt.Sprintf(`%s "%s"`, name, newValue))
+				updatedKeys[name] = true
+			} else {
+				newLines = append(newLines, line)
+			}
+		} else {
+			newLines = append(newLines, line)
+		}
+	}
+
+	// Append missing keys
+	for key, value := range updates {
+		if !updatedKeys[key] {
+			newLines = append(newLines, fmt.Sprintf(`%s "%s"`, key, value))
+		}
+	}
+
+	output := strings.Join(newLines, "\n")
+	return os.WriteFile(path, []byte(output), 0644)
+}

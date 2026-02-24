@@ -154,6 +154,8 @@ func main() {
 		plugins.POST("/delete", controller.DeletePlugin)
 		plugins.POST("/config", controller.GetPluginConfig)
 		plugins.POST("/config/update", controller.UpdatePluginConfig)
+		plugins.POST("/presets", controller.GetPresets)
+		plugins.POST("/apply-preset", controller.ApplyPreset)
 	}
 
 	// Admins Group
