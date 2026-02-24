@@ -666,11 +666,18 @@
               :value="preset.name"
               class="!h-auto !py-3 !px-4 !flex !items-center !rounded-md !border !border-gray-200 dark:!border-gray-700 hover:!border-blue-500 transition-all"
             >
-              <div class="flex flex-col text-left">
+              <div class="flex flex-col text-left w-full">
                 <span class="font-medium text-base">{{ preset.name }}</span>
                 <span
-                  class="text-xs mt-1"
-                  :class="selectedPreset === preset.name ? 'text-blue-100' : 'text-gray-500'"
+                  v-if="preset.desc"
+                  class="text-sm mt-1 mb-0.5 whitespace-normal opacity-90"
+                  :class="selectedPreset === preset.name ? 'text-white' : 'text-gray-500 dark:text-gray-400'"
+                >
+                  {{ preset.desc }}
+                </span>
+                <span
+                  class="text-xs mt-0.5 opacity-75"
+                  :class="selectedPreset === preset.name ? 'text-white' : 'text-gray-400 dark:text-gray-500'"
                 >
                   包含 {{ preset.plugin_count || 0 }} 个插件
                 </span>

@@ -3,6 +3,7 @@ platform:
   windows: 1.11插件平台windows版(6968-1155)(必须先启用这个)
 preset:
   - name: 多特战役
+    desc: 标准的多人多特玩法，neko多特以及一些优化体验插件
     plugins:
       - name: 必选-功能类插件(原生键值函数库)(v0.4)(fdxx)
       - name: 必选-功能类插件(WeaponHandling)(v1.0.6)(Lux)
@@ -97,6 +98,7 @@ preset:
       - name: 自选-友伤与反伤控制(v1.2)(可投票，需要原生投票库前置)(LaoYutang)
       - name: 自选-阻止游戏自带的部分提示(v1.1.2)(豆瓣酱な)
   - name: 娱乐多特战役
+    desc: 娱乐多特，比标准多特增加了杀特回血与自动复活，适合娱乐
     plugins:
       - name: 必选-功能类插件(原生键值函数库)(v0.4)(fdxx)
       - name: 必选-功能类插件(WeaponHandling)(v1.0.6)(Lux)
@@ -224,6 +226,7 @@ preset:
       - name: 自选-友伤与反伤控制(v1.2)(可投票，需要原生投票库前置)(LaoYutang)
       - name: 自选-阻止游戏自带的部分提示(v1.1.2)(豆瓣酱な)
   - name: 纯净战役
+    desc: 纯净战役，新人开服必备
     plugins:
       - name: 必选-功能类插件(原生键值函数库)(v0.4)(fdxx)
       - name: 必选-功能类插件(WeaponHandling)(v1.0.6)(Lux)
@@ -285,6 +288,7 @@ preset:
       - name: 自选-幸存者黑白发光(v2.0.2)(Lux)
       - name: 自选-阻止游戏自带的部分提示(v1.1.2)(豆瓣酱な)
   - name: 官图肉鸽模式
+    desc: laoyutang开发的肉鸽模式，有点难度，新手慎重
     plugins:
       - name: 必选-功能类插件(原生键值函数库)(v0.4)(fdxx)
       - name: 必选-功能类插件(WeaponHandling)(v1.0.6)(Lux)

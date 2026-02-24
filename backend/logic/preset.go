@@ -17,6 +17,7 @@ type PresetConfig struct {
 
 type Preset struct {
 	Name    string         `yaml:"name"`
+	Desc    string         `yaml:"desc"`
 	Plugins []PresetPlugin `yaml:"plugins"`
 }
 
@@ -32,6 +33,7 @@ type PresetPluginConfig struct {
 
 type PresetInfo struct {
 	Name        string `json:"name"`
+	Desc        string `json:"desc"`
 	PluginCount int    `json:"plugin_count"`
 }
 
@@ -50,6 +52,7 @@ func GetPresets() ([]PresetInfo, error) {
 	for _, p := range config.Presets {
 		presets = append(presets, PresetInfo{
 			Name:        p.Name,
+			Desc:        p.Desc,
 			PluginCount: len(p.Plugins),
 		})
 	}
