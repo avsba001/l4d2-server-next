@@ -36,7 +36,7 @@ type PresetInfo struct {
 }
 
 func GetPresets() ([]PresetInfo, error) {
-	data, err := os.ReadFile(filepath.Join(getStorePath(), "preset.yaml"))
+	data, err := os.ReadFile("preset.yaml")
 	if err != nil {
 		return nil, err
 	}
@@ -58,7 +58,7 @@ func GetPresets() ([]PresetInfo, error) {
 }
 
 func ApplyPreset(presetName string) error {
-	data, err := os.ReadFile(filepath.Join(getStorePath(), "preset.yaml"))
+	data, err := os.ReadFile("preset.yaml")
 	if err != nil {
 		return err
 	}

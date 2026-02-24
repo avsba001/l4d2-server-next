@@ -45,6 +45,7 @@ jobs:
           cp backend/ip2region_v4.xdb release/
           cp backend/ip2region_v6.xdb release/
           cp manifest/boot/start_manager.bat release/
+          cp backend/preset.yaml release/
           cp -r backend/static release/static
           cp -r plugins release/plugins
 
