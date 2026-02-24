@@ -34,7 +34,7 @@ read -r -p "请输入管理面板端口 (默认: 27020): " manager_port
 manager_port=${manager_port:-27020}
 
 # 询问是否开启历史性能监控
-read -r -p "是否开启历史性能监控(需持久化数据)? (y/n, 默认: n): " enable_history_metrics
+read -r -p "是否开启历史性能监控(需持久化数据)? (Y/n, 默认: n): " enable_history_metrics
 enable_history_metrics=${enable_history_metrics:-n}
 HISTORY_METRICS_VALUE="false"
 if [[ "$enable_history_metrics" =~ ^[Yy]$ ]]; then
@@ -108,7 +108,8 @@ EOF
 # ipinfo检测是否是国内环境，国内则增加compose中的镜像
 if curl -s ipinfo.io | grep -q '"country": "CN"'; then
   # 询问是否使用镜像源
-  read -r -p "检测到国内环境，是否使用国内镜像源？(y/n): " use_mirror
+  read -r -p "检测到国内环境，是否使用国内镜像源？(Y/n, 默认: Y): " use_mirror
+  use_mirror=${use_mirror:-y}
   if [[ "$use_mirror" =~ ^[Yy]$ ]]; then
     # 输入镜像源
     read -r -p "请输入国内镜像源地址 (默认: docker.1ms.run): " mirror_url
