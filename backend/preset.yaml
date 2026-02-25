@@ -5,6 +5,7 @@ preset:
   - name: 多特战役
     desc: 标准的多人多特玩法，neko多特以及一些优化体验插件
     plugins:
+      - name: 必选-功能类插件(left4dhooks)(v1.155)(SilverShot)
       - name: 必选-功能类插件(原生键值函数库)(v0.4)(fdxx)
       - name: 必选-功能类插件(WeaponHandling)(v1.0.6)(Lux)
       - name: 必选-功能类插件(原生投票函数库)(v0.4)(Powerlord, fdxx)
@@ -100,6 +101,7 @@ preset:
   - name: 娱乐多特战役
     desc: 娱乐多特，比标准多特增加了杀特回血与自动复活，适合娱乐
     plugins:
+      - name: 必选-功能类插件(left4dhooks)(v1.155)(SilverShot)
       - name: 必选-功能类插件(原生键值函数库)(v0.4)(fdxx)
       - name: 必选-功能类插件(WeaponHandling)(v1.0.6)(Lux)
       - name: 必选-功能类插件(原生投票函数库)(v0.4)(Powerlord, fdxx)
@@ -228,6 +230,7 @@ preset:
   - name: 纯净战役
     desc: 纯净战役，新人开服必备
     plugins:
+      - name: 必选-功能类插件(left4dhooks)(v1.155)(SilverShot)
       - name: 必选-功能类插件(原生键值函数库)(v0.4)(fdxx)
       - name: 必选-功能类插件(WeaponHandling)(v1.0.6)(Lux)
       - name: 必选-功能类插件(原生投票函数库)(v0.4)(Powerlord, fdxx)
@@ -290,6 +293,7 @@ preset:
   - name: 官图肉鸽模式
     desc: laoyutang开发的肉鸽模式，有点难度，新手慎重
     plugins:
+      - name: 必选-功能类插件(left4dhooks)(v1.155)(SilverShot)
       - name: 必选-功能类插件(原生键值函数库)(v0.4)(fdxx)
       - name: 必选-功能类插件(WeaponHandling)(v1.0.6)(Lux)
       - name: 必选-功能类插件(原生投票函数库)(v0.4)(Powerlord, fdxx)
