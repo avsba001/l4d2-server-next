@@ -94,7 +94,7 @@ services:
       - L4D2_RESTART_BY_RCON=true
       - L4D2_MANAGER_PASSWORD=$admin_password
       - L4D2_RCON_PASSWORD=$L4D2_RCON_PASSWORD
-      - L4D2_RCON_URL=l4d2:27015
+      - L4D2_RCON_URL=l4d2:$game_port
       - L4D2_GAME_PATH=/left4dead2
       - L4D2_HISTORY_METRICS=$HISTORY_METRICS_VALUE
     networks:
