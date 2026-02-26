@@ -41,6 +41,11 @@ if [[ "$enable_history_metrics" =~ ^[Yy]$ ]]; then
   HISTORY_METRICS_VALUE="true"
 fi
 
+# 询问 Steam API Key
+echo "Steam API Key 用于查询玩家游戏时长，获取地址: https://steamcommunity.com/dev/apikey"
+read -r -p "请输入 Steam API Key (可选，默认为空): " steam_api_key
+steam_api_key=${steam_api_key:-""}
+
 # 生成随机RCON密码
 L4D2_RCON_PASSWORD=$(tr -dc 'A-Za-z0-9' </dev/urandom | head -c 16)
 
@@ -97,6 +102,7 @@ services:
       - L4D2_RCON_URL=l4d2:$game_port
       - L4D2_GAME_PATH=/left4dead2
       - L4D2_HISTORY_METRICS=$HISTORY_METRICS_VALUE
+      - STEAM_API_KEY=$steam_api_key
     networks:
       - l4d2-network
     logging:
