@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"fmt"
 	"l4d2-manager-next/consts"
 	"mime/multipart"
 	"net/http"
@@ -45,10 +46,12 @@ func Upload(c *gin.Context) {
 
 	// 处理zip文件
 	if zipReg.Match([]byte(file.Filename)) {
-		if err := handleZipFile(c, file); err != nil {
+		files, err := handleZipFile(c, file)
+		if err != nil {
 			c.String(http.StatusInternalServerError, "解压Zip失败: %v", err)
 			return
 		}
+		LogOp(c, nil, "上传文件:", file.Filename, "解压文件:", fmt.Sprintf("%v", files))
 		c.String(http.StatusOK, "上传并解压成功！")
 		runtime.GC()
 		return
@@ -56,10 +59,12 @@ func Upload(c *gin.Context) {
 
 	// 处理rar文件
 	if rarReg.Match([]byte(file.Filename)) {
-		if err := handleRarFile(c, file); err != nil {
+		files, err := handleRarFile(c, file)
+		if err != nil {
 			c.String(http.StatusInternalServerError, "解压Rar失败: %v", err)
 			return
 		}
+		LogOp(c, nil, "上传文件:", file.Filename, "解压文件:", fmt.Sprintf("%v", files))
 		c.String(http.StatusOK, "上传并解压成功！")
 		runtime.GC()
 		return
@@ -67,10 +72,12 @@ func Upload(c *gin.Context) {
 
 	// 处理7z文件
 	if sevenZipReg.Match([]byte(file.Filename)) {
-		if err := handle7zFile(c, file); err != nil {
+		files, err := handle7zFile(c, file)
+		if err != nil {
 			c.String(http.StatusInternalServerError, "解压7z失败: %v", err)
 			return
 		}
+		LogOp(c, nil, "上传文件:", file.Filename, "解压文件:", fmt.Sprintf("%v", files))
 		c.String(http.StatusOK, "上传并解压成功！")
 		runtime.GC()
 		return
@@ -94,21 +101,23 @@ func Upload(c *gin.Context) {
 	}
 
 	// 使用共用的文件处理方法
-	if err := ProcessVpkFile(tempPath); err != nil {
+	files, err := ProcessVpkFile(tempPath)
+	if err != nil {
 		os.Remove(tempPath) // 清理临时文件
 		c.String(http.StatusInternalServerError, "处理文件失败: %v", err)
 		return
 	}
+	LogOp(c, nil, "上传文件:", file.Filename, "保存文件:", fmt.Sprintf("%v", files))
 
 	c.String(http.StatusOK, "上传成功！")
 	runtime.GC()
 }
 
-func handleZipFile(c *gin.Context, file *multipart.FileHeader) error {
+func handleZipFile(c *gin.Context, file *multipart.FileHeader) ([]string, error) {
 	// 保存临时zip文件
 	tempZipPath := filepath.Join(consts.AddonsBasePath, "temp_"+file.Filename)
 	if err := c.SaveUploadedFile(file, tempZipPath); err != nil {
-		return err
+		return nil, err
 	}
 	defer os.Remove(tempZipPath) // 清理临时文件
 
@@ -116,11 +125,11 @@ func handleZipFile(c *gin.Context, file *multipart.FileHeader) error {
 	return ProcessZipFile(tempZipPath)
 }
 
-func handleRarFile(c *gin.Context, file *multipart.FileHeader) error {
+func handleRarFile(c *gin.Context, file *multipart.FileHeader) ([]string, error) {
 	// 保存临时rar文件
 	tempRarPath := filepath.Join(consts.AddonsBasePath, "temp_"+file.Filename)
 	if err := c.SaveUploadedFile(file, tempRarPath); err != nil {
-		return err
+		return nil, err
 	}
 	defer os.Remove(tempRarPath) // 清理临时文件
 
@@ -128,11 +137,11 @@ func handleRarFile(c *gin.Context, file *multipart.FileHeader) error {
 	return ProcessRarFile(tempRarPath)
 }
 
-func handle7zFile(c *gin.Context, file *multipart.FileHeader) error {
+func handle7zFile(c *gin.Context, file *multipart.FileHeader) ([]string, error) {
 	// 保存临时7z文件
 	temp7zPath := filepath.Join(consts.AddonsBasePath, "temp_"+file.Filename)
 	if err := c.SaveUploadedFile(file, temp7zPath); err != nil {
-		return err
+		return nil, err
 	}
 	defer os.Remove(temp7zPath) // 清理临时文件
 

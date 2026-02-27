@@ -11,6 +11,9 @@ import (
 )
 
 func Remove(c *gin.Context) {
+	mapName := c.PostForm("map")
+	LogOp(c, nil, "删除地图文件:", mapName)
+
 	mutex.Lock()
 	defer mutex.Unlock()
 

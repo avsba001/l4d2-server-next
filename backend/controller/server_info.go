@@ -90,6 +90,7 @@ func UpdateServerInfo(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+	LogOp(c, req, "更新服务器信息")
 
 	hostnamePath := filepath.Join(consts.GamePath, "addons", "sourcemod", "configs", "l4d2_hostname.txt")
 	motdPath := filepath.Join(consts.GamePath, "motd.txt")

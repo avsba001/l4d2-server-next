@@ -40,6 +40,7 @@ func UpdatePluginConfig(c *gin.Context) {
 		c.String(http.StatusBadRequest, "无效的请求格式")
 		return
 	}
+	LogOp(c, req, "更新插件配置")
 
 	if err := logic.SavePluginConfig(req.ConfigName, req.Updates); err != nil {
 		c.String(http.StatusInternalServerError, "保存配置失败: %v", err)

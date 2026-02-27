@@ -23,6 +23,7 @@ func ChangeMap(c *gin.Context) {
 		c.String(http.StatusBadRequest, "地图名称不能为空")
 		return
 	}
+	LogOp(c, nil, "切换地图:", mapName)
 
 	conn, err := getRconConnection()
 	if err != nil {
@@ -297,6 +298,7 @@ func KickUser(c *gin.Context) {
 	// 优先接收用户名，如果没有则接收用户ID
 	userName := c.PostForm("userName")
 	userId := c.PostForm("userId")
+	LogOp(c, nil, "踢出用户:", userName, userId)
 
 	var kickTarget string
 	if userName != "" {
@@ -331,6 +333,7 @@ func BanUser(c *gin.Context) {
 	userId := c.PostForm("userId")
 	steamId := c.PostForm("steamId")
 	kick := c.PostForm("kick") == "true"
+	LogOp(c, nil, "封禁用户:", userId, steamId, "踢出:", kick)
 
 	var banTarget string
 	if steamId != "" {
@@ -379,6 +382,7 @@ func ChangeDifficulty(c *gin.Context) {
 		c.String(http.StatusBadRequest, "难度不能为空")
 		return
 	}
+	LogOp(c, nil, "切换难度:", difficulty)
 
 	// 验证难度值
 	validDifficulties := map[string]string{
@@ -415,6 +419,7 @@ func ChangeGameMode(c *gin.Context) {
 		c.String(http.StatusBadRequest, "游戏模式不能为空")
 		return
 	}
+	LogOp(c, nil, "切换模式:", gameMode)
 
 	// 验证模式值
 	validGameModes := map[string]string{
@@ -478,6 +483,7 @@ func Rcon(c *gin.Context) {
 		c.String(http.StatusBadRequest, "命令不能为空")
 		return
 	}
+	LogOp(c, nil, "执行RCON命令:", cmd)
 
 	conn, err := getRconConnection()
 	if err != nil {

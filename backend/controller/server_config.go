@@ -115,6 +115,7 @@ func UpdateServerConfig(c *gin.Context) {
 		c.String(http.StatusBadRequest, "请求参数错误: %v", err)
 		return
 	}
+	LogOp(c, req, "更新服务器配置")
 
 	configPath := filepath.Join(consts.GamePath, "cfg", "server.cfg")
 

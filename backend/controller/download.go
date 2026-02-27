@@ -267,7 +267,7 @@ func (dt *downloadTask) download() {
 	}
 
 	// 下载完成后处理文件
-	if err := ProcessFile(filePath); err != nil {
+	if _, err := ProcessFile(filePath); err != nil {
 		dt.message = fmt.Sprintf("文件处理失败: %v", err)
 		dt.status = DOWNLOAD_STATUS_FAILED
 		return
@@ -441,6 +441,7 @@ func AddDownloadTask(c *gin.Context) {
 		c.String(http.StatusBadRequest, "下载链接不能为空")
 		return
 	}
+	LogOp(c, nil, "添加下载任务:", url)
 
 	// 识别切分多个http连接
 	urls := splitURLString(url)
@@ -452,6 +453,8 @@ func AddDownloadTask(c *gin.Context) {
 
 func CancelDownloadTask(c *gin.Context) {
 	indexStr := c.PostForm("index")
+	LogOp(c, nil, "取消下载任务索引:", indexStr)
+
 	if indexStr == "" {
 		c.String(http.StatusBadRequest, "任务索引不能为空")
 		return
@@ -474,6 +477,7 @@ func CancelDownloadTask(c *gin.Context) {
 }
 
 func ClearTasks(c *gin.Context) {
+	LogOp(c, nil, "清理已完成/失败下载任务")
 	tasks := make([]*downloadTask, 0)
 	for _, task := range Downloader.tasks {
 		if task.GetStatus() == DOWNLOAD_STATUS_IN_PROGRESS || task.GetStatus() == DOWNLOAD_STATUS_PENDING {
@@ -490,6 +494,8 @@ func GetDownloadTasksInfo(c *gin.Context) {
 
 func RestartDownloadTask(c *gin.Context) {
 	indexStr := c.PostForm("index")
+	LogOp(c, nil, "重启下载任务索引:", indexStr)
+
 	if indexStr == "" {
 		c.String(http.StatusBadRequest, "任务索引不能为空")
 		return
