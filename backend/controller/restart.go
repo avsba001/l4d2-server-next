@@ -15,7 +15,7 @@ func Restart(c *gin.Context) {
 	// 使用RCON重启
 	if os.Getenv("L4D2_RESTART_BY_RCON") == "true" {
 		if err := restartByRcon(); err != nil {
-			c.String(http.StatusInternalServerError, err.Error())
+			FailWithError(c, http.StatusInternalServerError, "%s", err.Error())
 		}
 		return
 	}
@@ -37,8 +37,7 @@ func Restart(c *gin.Context) {
 		err = exec.Command("sh", "-c", restartCmd).Run()
 	}
 	if err != nil {
-		fmt.Println("重启失败:", err)
-		c.String(http.StatusInternalServerError, "重启失败")
+		FailWithError(c, http.StatusInternalServerError, "重启失败: %v", err)
 		return
 	}
 

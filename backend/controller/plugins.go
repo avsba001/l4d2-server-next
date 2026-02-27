@@ -12,7 +12,7 @@ import (
 func GetPlugins(c *gin.Context) {
 	plugins, err := logic.GetPlugins()
 	if err != nil {
-		c.String(http.StatusInternalServerError, "获取插件列表失败: %v", err)
+		FailWithError(c, http.StatusInternalServerError, "获取插件列表失败: %v", err)
 		return
 	}
 	c.JSON(http.StatusOK, plugins)
@@ -21,14 +21,14 @@ func GetPlugins(c *gin.Context) {
 func UploadPlugin(c *gin.Context) {
 	role, _ := c.Get("role")
 	if role != "admin" {
-		c.String(http.StatusForbidden, "需要管理员权限")
+		FailWithError(c, http.StatusForbidden, "需要管理员权限")
 		return
 	}
 
 	form, err := c.MultipartForm()
 	if err != nil {
 		if err = c.Request.ParseMultipartForm(32 << 20); err != nil {
-			c.String(http.StatusBadRequest, "解析表单失败: %v", err)
+			FailWithError(c, http.StatusBadRequest, "解析表单失败: %v", err)
 			return
 		}
 		form = c.Request.MultipartForm
@@ -36,7 +36,7 @@ func UploadPlugin(c *gin.Context) {
 
 	files := form.File["file"]
 	if len(files) == 0 {
-		c.String(http.StatusBadRequest, "未上传文件")
+		FailWithError(c, http.StatusBadRequest, "未上传文件")
 		return
 	}
 
@@ -61,7 +61,7 @@ func UploadPlugin(c *gin.Context) {
 	}
 
 	if len(errs) > 0 {
-		c.String(http.StatusInternalServerError, strings.Join(errs, "; "))
+		FailWithError(c, http.StatusInternalServerError, "%s", strings.Join(errs, "; "))
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "插件上传成功"})
@@ -70,19 +70,19 @@ func UploadPlugin(c *gin.Context) {
 func EnablePlugin(c *gin.Context) {
 	role, _ := c.Get("role")
 	if role != "admin" {
-		c.String(http.StatusForbidden, "需要管理员权限")
+		FailWithError(c, http.StatusForbidden, "需要管理员权限")
 		return
 	}
 
 	name := c.PostForm("name")
 	if name == "" {
-		c.String(http.StatusBadRequest, "插件名称不能为空")
+		FailWithError(c, http.StatusBadRequest, "插件名称不能为空")
 		return
 	}
 	LogOp(c, nil, "启用插件:", name)
 
 	if err := logic.EnablePlugin(name); err != nil {
-		c.String(http.StatusInternalServerError, "启用插件失败: %v", err)
+		FailWithError(c, http.StatusInternalServerError, "启用插件失败: %v", err)
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "插件启用成功"})
@@ -91,19 +91,19 @@ func EnablePlugin(c *gin.Context) {
 func DisablePlugin(c *gin.Context) {
 	role, _ := c.Get("role")
 	if role != "admin" {
-		c.String(http.StatusForbidden, "需要管理员权限")
+		FailWithError(c, http.StatusForbidden, "需要管理员权限")
 		return
 	}
 
 	name := c.PostForm("name")
 	if name == "" {
-		c.String(http.StatusBadRequest, "插件名称不能为空")
+		FailWithError(c, http.StatusBadRequest, "插件名称不能为空")
 		return
 	}
 	LogOp(c, nil, "禁用插件:", name)
 
 	if err := logic.DisablePlugin(name); err != nil {
-		c.String(http.StatusInternalServerError, "禁用插件失败: %v", err)
+		FailWithError(c, http.StatusInternalServerError, "禁用插件失败: %v", err)
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "插件禁用成功"})
@@ -112,19 +112,19 @@ func DisablePlugin(c *gin.Context) {
 func DeletePlugin(c *gin.Context) {
 	role, _ := c.Get("role")
 	if role != "admin" {
-		c.String(http.StatusForbidden, "需要管理员权限")
+		FailWithError(c, http.StatusForbidden, "需要管理员权限")
 		return
 	}
 
 	name := c.PostForm("name")
 	if name == "" {
-		c.String(http.StatusBadRequest, "插件名称不能为空")
+		FailWithError(c, http.StatusBadRequest, "插件名称不能为空")
 		return
 	}
 	LogOp(c, nil, "删除插件:", name)
 
 	if err := logic.DeletePlugin(name); err != nil {
-		c.String(http.StatusInternalServerError, "删除插件失败: %v", err)
+		FailWithError(c, http.StatusInternalServerError, "删除插件失败: %v", err)
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "插件删除成功"})
@@ -137,24 +137,24 @@ type BatchPluginRequest struct {
 func EnablePlugins(c *gin.Context) {
 	role, _ := c.Get("role")
 	if role != "admin" {
-		c.String(http.StatusForbidden, "需要管理员权限")
+		FailWithError(c, http.StatusForbidden, "需要管理员权限")
 		return
 	}
 
 	var req BatchPluginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.String(http.StatusBadRequest, "无效的请求格式")
+		FailWithError(c, http.StatusBadRequest, "无效的请求格式")
 		return
 	}
 	LogOp(c, req, "批量启用插件")
 
 	if len(req.Names) == 0 {
-		c.String(http.StatusBadRequest, "插件列表不能为空")
+		FailWithError(c, http.StatusBadRequest, "插件列表不能为空")
 		return
 	}
 
 	if err := logic.EnablePlugins(req.Names); err != nil {
-		c.String(http.StatusInternalServerError, "批量启用插件失败: %v", err)
+		FailWithError(c, http.StatusInternalServerError, "批量启用插件失败: %v", err)
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "批量启用成功"})
@@ -163,24 +163,24 @@ func EnablePlugins(c *gin.Context) {
 func DisablePlugins(c *gin.Context) {
 	role, _ := c.Get("role")
 	if role != "admin" {
-		c.String(http.StatusForbidden, "需要管理员权限")
+		FailWithError(c, http.StatusForbidden, "需要管理员权限")
 		return
 	}
 
 	var req BatchPluginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.String(http.StatusBadRequest, "无效的请求格式")
+		FailWithError(c, http.StatusBadRequest, "无效的请求格式")
 		return
 	}
 	LogOp(c, req, "批量禁用插件")
 
 	if len(req.Names) == 0 {
-		c.String(http.StatusBadRequest, "插件列表不能为空")
+		FailWithError(c, http.StatusBadRequest, "插件列表不能为空")
 		return
 	}
 
 	if err := logic.DisablePlugins(req.Names); err != nil {
-		c.String(http.StatusInternalServerError, "批量禁用插件失败: %v", err)
+		FailWithError(c, http.StatusInternalServerError, "批量禁用插件失败: %v", err)
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "批量禁用成功"})
@@ -189,7 +189,7 @@ func DisablePlugins(c *gin.Context) {
 func GetPresets(c *gin.Context) {
 	presets, err := logic.GetPresets()
 	if err != nil {
-		c.String(http.StatusInternalServerError, "获取预设列表失败: %v", err)
+		FailWithError(c, http.StatusInternalServerError, "获取预设列表失败: %v", err)
 		return
 	}
 	c.JSON(http.StatusOK, presets)
@@ -198,19 +198,19 @@ func GetPresets(c *gin.Context) {
 func ApplyPreset(c *gin.Context) {
 	role, _ := c.Get("role")
 	if role != "admin" {
-		c.String(http.StatusForbidden, "需要管理员权限")
+		FailWithError(c, http.StatusForbidden, "需要管理员权限")
 		return
 	}
 
 	name := c.PostForm("name")
 	if name == "" {
-		c.String(http.StatusBadRequest, "预设名称不能为空")
+		FailWithError(c, http.StatusBadRequest, "预设名称不能为空")
 		return
 	}
 	LogOp(c, nil, "应用插件预设:", name)
 
 	if err := logic.ApplyPreset(name); err != nil {
-		c.String(http.StatusInternalServerError, "%v", err)
+		FailWithError(c, http.StatusInternalServerError, "%v", err)
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "预设应用成功"})

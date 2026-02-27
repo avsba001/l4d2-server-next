@@ -20,7 +20,7 @@ func Remove(c *gin.Context) {
 	mapPath := filepath.Join(consts.AddonsBasePath, c.PostForm("map"))
 	err := os.Remove(mapPath)
 	if err != nil {
-		c.String(http.StatusBadRequest, "地图不存在")
+		FailWithError(c, http.StatusBadRequest, "地图不存在: %v", err)
 		return
 	}
 
@@ -28,7 +28,7 @@ func Remove(c *gin.Context) {
 	mapListPath := consts.MapListFilePath
 	mapListBytes, err := os.ReadFile(mapListPath)
 	if err != nil {
-		c.String(http.StatusBadRequest, "删除时maplist.txt不存在")
+		FailWithError(c, http.StatusBadRequest, "删除时maplist.txt不存在: %v", err)
 		return
 	}
 	mapList := strings.Split(string(mapListBytes), "\n")
@@ -42,7 +42,7 @@ func Remove(c *gin.Context) {
 	newMapListBytes := []byte(strings.Join(newMapList, "\n"))
 	err = os.WriteFile(mapListPath, newMapListBytes, 0644)
 	if err != nil {
-		c.String(http.StatusBadRequest, "删除时写入文件失败")
+		FailWithError(c, http.StatusBadRequest, "删除时写入文件失败: %v", err)
 		return
 	}
 

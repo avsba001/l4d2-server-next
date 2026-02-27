@@ -2,6 +2,7 @@ package controller
 
 import (
 	"fmt"
+	"runtime/debug"
 	"strings"
 	"time"
 
@@ -36,4 +37,18 @@ func LogOp(c *gin.Context, params any, extra ...any) {
 	content := strings.Join(contentParts, " ")
 
 	fmt.Printf("[OPT] %s | %s | %s | %s | %s\n", now, ip, role, path, content)
+}
+
+// LogError prints an error log.
+func LogError(c *gin.Context, args ...any) {
+	msg := fmt.Sprint(args...)
+	stack := string(debug.Stack())
+	fmt.Printf("[ERR] %s\n%s\n", msg, stack)
+}
+
+// FailWithError logs the error and sends a string response.
+func FailWithError(c *gin.Context, code int, format string, a ...any) {
+	msg := fmt.Sprintf(format, a...)
+	LogError(c, msg)
+	c.String(code, msg)
 }

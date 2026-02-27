@@ -32,7 +32,7 @@ func GetTempAuthCode(c *gin.Context) {
 
 	privateKey, exist := c.Get("privateKey")
 	if !exist {
-		c.String(400, "请使用密码生成授权码")
+		FailWithError(c, 400, "请使用密码生成授权码")
 		return
 	}
 
@@ -50,7 +50,7 @@ func GetTempAuthCode(c *gin.Context) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	tokenString, err := token.SignedString(privateKey)
 	if err != nil {
-		c.String(500, "生成授权码失败: %v", err)
+		FailWithError(c, 500, "生成授权码失败: %v", err)
 		return
 	}
 	c.String(200, tokenString)
@@ -82,14 +82,14 @@ func GenerateSelfServiceCode(c *gin.Context) {
 	config := logic.GetSelfServiceConfig()
 
 	if !config.EnableSelfService {
-		c.String(403, "自助授权功能未开启")
+		FailWithError(c, 403, "自助授权功能未开启")
 		return
 	}
 
 	elapsed := time.Since(config.LastSelfServiceTime)
 	if elapsed < time.Hour {
 		remaining := int((time.Hour - elapsed).Seconds())
-		c.String(429, "系统冷却中，请等待 %d 秒", remaining)
+		FailWithError(c, 429, "系统冷却中，请等待 %d 秒", remaining)
 		return
 	}
 
@@ -105,7 +105,7 @@ func GenerateSelfServiceCode(c *gin.Context) {
 	if !exist {
 		// 如果没有 privateKey，尝试从文件读取或者报错
 		// 这里为了简单，假设 main.go 会调整以注入 key
-		c.String(500, "系统配置错误: 密钥缺失")
+		FailWithError(c, 500, "系统配置错误: 密钥缺失")
 		return
 	}
 
@@ -119,12 +119,12 @@ func GenerateSelfServiceCode(c *gin.Context) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	tokenString, err := token.SignedString(privateKey) // privateKey 应该是 []byte
 	if err != nil {
-		c.String(500, "生成授权码失败: %v", err)
+		FailWithError(c, 500, "生成授权码失败: %v", err)
 		return
 	}
 
 	if err := logic.UpdateLastSelfServiceTime(); err != nil {
-		c.String(500, "保存状态失败")
+		FailWithError(c, 500, "保存状态失败")
 		return
 	}
 
@@ -139,7 +139,7 @@ func GenerateSelfServiceCode(c *gin.Context) {
 func SetSelfServiceConfig(c *gin.Context) {
 	role, _ := c.Get("role")
 	if role != "admin" {
-		c.String(403, "需要管理员权限")
+		FailWithError(c, 403, "需要管理员权限")
 		return
 	}
 
@@ -147,13 +147,13 @@ func SetSelfServiceConfig(c *gin.Context) {
 		Enable bool `json:"enable"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.String(400, "参数错误")
+		FailWithError(c, 400, "参数错误")
 		return
 	}
 	LogOp(c, req, "设置自助授权配置")
 
 	if err := logic.SetSelfServiceEnable(req.Enable); err != nil {
-		c.String(500, "保存配置失败: %v", err)
+		FailWithError(c, 500, "保存配置失败: %v", err)
 		return
 	}
 

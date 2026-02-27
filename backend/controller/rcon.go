@@ -20,21 +20,21 @@ func GetRconMapList(c *gin.Context) {
 func ChangeMap(c *gin.Context) {
 	mapName := c.PostForm("mapName")
 	if mapName == "" {
-		c.String(http.StatusBadRequest, "地图名称不能为空")
+		FailWithError(c, http.StatusBadRequest, "地图名称不能为空")
 		return
 	}
 	LogOp(c, nil, "切换地图:", mapName)
 
 	conn, err := getRconConnection()
 	if err != nil {
-		c.String(http.StatusInternalServerError, "连接RCON失败: %v", err)
+		FailWithError(c, http.StatusInternalServerError, "连接RCON失败: %v", err)
 		return
 	}
 	defer conn.Close()
 
 	_, err = conn.Execute("changelevel " + mapName)
 	if err != nil {
-		c.String(http.StatusInternalServerError, "RCON命令执行失败: %v", err)
+		FailWithError(c, http.StatusInternalServerError, "RCON命令执行失败: %v", err)
 		return
 	}
 	c.String(http.StatusOK, "地图切换成功")
@@ -43,7 +43,7 @@ func ChangeMap(c *gin.Context) {
 func GetStatus(c *gin.Context) {
 	conn, err := getRconConnection()
 	if err != nil {
-		c.String(http.StatusInternalServerError, "连接RCON失败: %v", err)
+		FailWithError(c, http.StatusInternalServerError, "连接RCON失败: %v", err)
 		return
 	}
 	defer conn.Close()
@@ -51,7 +51,7 @@ func GetStatus(c *gin.Context) {
 	// 获取服务器状态
 	res, err := conn.Execute("status")
 	if err != nil {
-		c.String(http.StatusInternalServerError, "RCON命令执行失败: %v", err)
+		FailWithError(c, http.StatusInternalServerError, "RCON命令执行失败: %v", err)
 		return
 	}
 
@@ -306,20 +306,20 @@ func KickUser(c *gin.Context) {
 	} else if userId != "" {
 		kickTarget = userId
 	} else {
-		c.String(http.StatusBadRequest, "用户名或用户ID不能为空")
+		FailWithError(c, http.StatusBadRequest, "用户名或用户ID不能为空")
 		return
 	}
 
 	conn, err := getRconConnection()
 	if err != nil {
-		c.String(http.StatusInternalServerError, "连接RCON失败: %v", err)
+		FailWithError(c, http.StatusInternalServerError, "连接RCON失败: %v", err)
 		return
 	}
 	defer conn.Close()
 
 	_, err = conn.Execute("kick " + kickTarget)
 	if err != nil {
-		c.String(http.StatusInternalServerError, "RCON命令执行失败: %v", err)
+		FailWithError(c, http.StatusInternalServerError, "RCON命令执行失败: %v", err)
 		return
 	}
 	c.String(http.StatusOK, "用户踢出成功")
@@ -341,13 +341,13 @@ func BanUser(c *gin.Context) {
 	} else if userId != "" {
 		banTarget = userId
 	} else {
-		c.String(http.StatusBadRequest, "SteamID或用户ID不能为空")
+		FailWithError(c, http.StatusBadRequest, "SteamID或用户ID不能为空")
 		return
 	}
 
 	conn, err := getRconConnection()
 	if err != nil {
-		c.String(http.StatusInternalServerError, "连接RCON失败: %v", err)
+		FailWithError(c, http.StatusInternalServerError, "连接RCON失败: %v", err)
 		return
 	}
 	defer conn.Close()
@@ -363,7 +363,7 @@ func BanUser(c *gin.Context) {
 
 	_, err = conn.Execute(cmdBan)
 	if err != nil {
-		c.String(http.StatusInternalServerError, "RCON封禁命令执行失败: %v", err)
+		FailWithError(c, http.StatusInternalServerError, "RCON封禁命令执行失败: %v", err)
 		return
 	}
 
@@ -379,7 +379,7 @@ func BanUser(c *gin.Context) {
 func ChangeDifficulty(c *gin.Context) {
 	difficulty := c.PostForm("difficulty")
 	if difficulty == "" {
-		c.String(http.StatusBadRequest, "难度不能为空")
+		FailWithError(c, http.StatusBadRequest, "难度不能为空")
 		return
 	}
 	LogOp(c, nil, "切换难度:", difficulty)
@@ -394,20 +394,20 @@ func ChangeDifficulty(c *gin.Context) {
 
 	englishDifficulty, ok := validDifficulties[difficulty]
 	if !ok {
-		c.String(http.StatusBadRequest, "无效的难度值")
+		FailWithError(c, http.StatusBadRequest, "无效的难度值")
 		return
 	}
 
 	conn, err := getRconConnection()
 	if err != nil {
-		c.String(http.StatusInternalServerError, "连接RCON失败: %v", err)
+		FailWithError(c, http.StatusInternalServerError, "连接RCON失败: %v", err)
 		return
 	}
 	defer conn.Close()
 
 	_, err = conn.Execute("z_difficulty " + englishDifficulty)
 	if err != nil {
-		c.String(http.StatusInternalServerError, "RCON命令执行失败: %v", err)
+		FailWithError(c, http.StatusInternalServerError, "RCON命令执行失败: %v", err)
 		return
 	}
 	c.String(http.StatusOK, "难度切换成功")
@@ -416,7 +416,7 @@ func ChangeDifficulty(c *gin.Context) {
 func ChangeGameMode(c *gin.Context) {
 	gameMode := c.PostForm("gameMode")
 	if gameMode == "" {
-		c.String(http.StatusBadRequest, "游戏模式不能为空")
+		FailWithError(c, http.StatusBadRequest, "游戏模式不能为空")
 		return
 	}
 	LogOp(c, nil, "切换模式:", gameMode)
@@ -458,20 +458,20 @@ func ChangeGameMode(c *gin.Context) {
 
 	englishGameMode, ok := validGameModes[gameMode]
 	if !ok {
-		c.String(http.StatusBadRequest, "无效的游戏模式值")
+		FailWithError(c, http.StatusBadRequest, "无效的游戏模式值")
 		return
 	}
 
 	conn, err := getRconConnection()
 	if err != nil {
-		c.String(http.StatusInternalServerError, "连接RCON失败: %v", err)
+		FailWithError(c, http.StatusInternalServerError, "连接RCON失败: %v", err)
 		return
 	}
 	defer conn.Close()
 
 	_, err = conn.Execute("sm_cvar mp_gamemode " + englishGameMode)
 	if err != nil {
-		c.String(http.StatusInternalServerError, "RCON命令执行失败: %v", err)
+		FailWithError(c, http.StatusInternalServerError, "RCON命令执行失败: %v", err)
 		return
 	}
 	c.String(http.StatusOK, "游戏模式切换成功")
@@ -480,21 +480,21 @@ func ChangeGameMode(c *gin.Context) {
 func Rcon(c *gin.Context) {
 	cmd := c.PostForm("cmd")
 	if cmd == "" {
-		c.String(http.StatusBadRequest, "命令不能为空")
+		FailWithError(c, http.StatusBadRequest, "命令不能为空")
 		return
 	}
 	LogOp(c, nil, "执行RCON命令:", cmd)
 
 	conn, err := getRconConnection()
 	if err != nil {
-		c.String(http.StatusInternalServerError, "连接RCON失败: %v", err)
+		FailWithError(c, http.StatusInternalServerError, "连接RCON失败: %v", err)
 		return
 	}
 	defer conn.Close()
 
 	res, err := conn.Execute(cmd)
 	if err != nil {
-		c.String(http.StatusInternalServerError, "RCON命令执行失败: %v", err)
+		FailWithError(c, http.StatusInternalServerError, "RCON命令执行失败: %v", err)
 		return
 	}
 	c.String(http.StatusOK, res)

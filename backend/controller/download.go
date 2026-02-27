@@ -430,15 +430,15 @@ func init() {
 
 func AddDownloadTask(c *gin.Context) {
 	if stat, err := disk.Usage(consts.AddonsBasePath); err != nil {
-		c.String(http.StatusInternalServerError, "获取磁盘使用信息失败: %v", err)
+		FailWithError(c, http.StatusInternalServerError, "获取磁盘使用信息失败: %v", err)
 	} else if stat.UsedPercent > 90 {
-		c.String(http.StatusInsufficientStorage, "磁盘空间不足，当前使用率超过90%")
+		FailWithError(c, http.StatusInsufficientStorage, "磁盘空间不足，当前使用率超过90%%")
 		return
 	}
 
 	url := c.PostForm("url")
 	if url == "" {
-		c.String(http.StatusBadRequest, "下载链接不能为空")
+		FailWithError(c, http.StatusBadRequest, "下载链接不能为空")
 		return
 	}
 	LogOp(c, nil, "添加下载任务:", url)
@@ -456,18 +456,18 @@ func CancelDownloadTask(c *gin.Context) {
 	LogOp(c, nil, "取消下载任务索引:", indexStr)
 
 	if indexStr == "" {
-		c.String(http.StatusBadRequest, "任务索引不能为空")
+		FailWithError(c, http.StatusBadRequest, "任务索引不能为空")
 		return
 	}
 
 	index, err := strconv.Atoi(indexStr)
 	if err != nil {
-		c.String(http.StatusBadRequest, "任务索引格式错误")
+		FailWithError(c, http.StatusBadRequest, "任务索引格式错误")
 		return
 	}
 
 	if index < 0 || index >= len(Downloader.tasks) {
-		c.String(http.StatusBadRequest, "任务索引超出范围")
+		FailWithError(c, http.StatusBadRequest, "任务索引超出范围")
 		return
 	}
 
@@ -497,18 +497,18 @@ func RestartDownloadTask(c *gin.Context) {
 	LogOp(c, nil, "重启下载任务索引:", indexStr)
 
 	if indexStr == "" {
-		c.String(http.StatusBadRequest, "任务索引不能为空")
+		FailWithError(c, http.StatusBadRequest, "任务索引不能为空")
 		return
 	}
 
 	index, err := strconv.Atoi(indexStr)
 	if err != nil {
-		c.String(http.StatusBadRequest, "任务索引格式错误")
+		FailWithError(c, http.StatusBadRequest, "任务索引格式错误")
 		return
 	}
 
 	if index < 0 || index >= len(Downloader.tasks) {
-		c.String(http.StatusBadRequest, "任务索引超出范围")
+		FailWithError(c, http.StatusBadRequest, "任务索引超出范围")
 		return
 	}
 

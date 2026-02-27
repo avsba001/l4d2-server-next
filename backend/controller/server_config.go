@@ -106,13 +106,13 @@ func GetServerConfig(c *gin.Context) {
 func UpdateServerConfig(c *gin.Context) {
 	role, _ := c.Get("role")
 	if role != "admin" {
-		c.String(http.StatusForbidden, "需要管理员权限")
+		FailWithError(c, http.StatusForbidden, "需要管理员权限")
 		return
 	}
 
 	var req UpdateServerConfigRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.String(http.StatusBadRequest, "请求参数错误: %v", err)
+		FailWithError(c, http.StatusBadRequest, "请求参数错误: %v", err)
 		return
 	}
 	LogOp(c, req, "更新服务器配置")
@@ -222,7 +222,7 @@ func UpdateServerConfig(c *gin.Context) {
 
 	// Write server.cfg
 	if err := os.WriteFile(configPath, []byte(finalContent), 0644); err != nil {
-		c.String(http.StatusInternalServerError, "保存配置文件失败: %v", err)
+		FailWithError(c, http.StatusInternalServerError, "保存配置文件失败: %v", err)
 		return
 	}
 

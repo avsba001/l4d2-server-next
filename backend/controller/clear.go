@@ -17,7 +17,7 @@ func Clear(c *gin.Context) {
 
 	fileBytes, err := os.ReadFile(consts.MapListFilePath)
 	if err != nil {
-		c.String(http.StatusInternalServerError, "获取地图记录文件失败")
+		FailWithError(c, http.StatusInternalServerError, "获取地图记录文件失败: %v", err)
 		return
 	}
 
@@ -34,12 +34,12 @@ func Clear(c *gin.Context) {
 
 	if len(errFileList) > 0 {
 		os.WriteFile(consts.MapListFilePath, []byte(strings.Join(errFileList, "\n")+"\n"), 0666)
-		c.String(http.StatusInternalServerError, "以下文件删除失败："+strings.Join(errFileList, ","))
+		FailWithError(c, http.StatusInternalServerError, "以下文件删除失败：%s", strings.Join(errFileList, ","))
 		return
 	}
 
 	if err := os.WriteFile(consts.MapListFilePath, []byte{}, 0666); err != nil {
-		c.String(http.StatusInternalServerError, "清空记录文件失败")
+		FailWithError(c, http.StatusInternalServerError, "清空记录文件失败: %v", err)
 		return
 	}
 

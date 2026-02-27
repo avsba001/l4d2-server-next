@@ -81,13 +81,13 @@ func GetServerInfo(c *gin.Context) {
 func UpdateServerInfo(c *gin.Context) {
 	role, _ := c.Get("role")
 	if role != "admin" {
-		c.JSON(http.StatusForbidden, gin.H{"error": "需要管理员权限"})
+		FailWithError(c, http.StatusForbidden, "需要管理员权限")
 		return
 	}
 
 	var req UpdateServerInfoRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		FailWithError(c, http.StatusBadRequest, "请求参数错误: %v", err)
 		return
 	}
 	LogOp(c, req, "更新服务器信息")

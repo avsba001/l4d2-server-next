@@ -14,10 +14,10 @@ func GetAdmins(c *gin.Context) {
 		// Requirement says: "if file not exists, prompt to enable sourcemod"
 		// ParseAdminsSimple returns error for this.
 		if err.Error() == "SourceMod 未启用或配置文件不存在" {
-			c.String(http.StatusNotFound, err.Error())
+			FailWithError(c, http.StatusNotFound, "%s", err.Error())
 			return
 		}
-		c.String(http.StatusInternalServerError, "获取管理员列表失败: %v", err)
+		FailWithError(c, http.StatusInternalServerError, "获取管理员列表失败: %v", err)
 		return
 	}
 	c.JSON(http.StatusOK, admins)
@@ -31,24 +31,24 @@ type AddAdminRequest struct {
 func AddAdmin(c *gin.Context) {
 	role, _ := c.Get("role")
 	if role != "admin" {
-		c.String(http.StatusForbidden, "需要管理员权限")
+		FailWithError(c, http.StatusForbidden, "需要管理员权限")
 		return
 	}
 
 	var req AddAdminRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.String(http.StatusBadRequest, "无效的请求格式")
+		FailWithError(c, http.StatusBadRequest, "无效的请求格式")
 		return
 	}
 	LogOp(c, req, "添加管理员")
 
 	if req.SteamID == "" {
-		c.String(http.StatusBadRequest, "SteamID 不能为空")
+		FailWithError(c, http.StatusBadRequest, "SteamID 不能为空")
 		return
 	}
 
 	if err := logic.AddAdmin(req.SteamID, req.Remark); err != nil {
-		c.String(http.StatusInternalServerError, "添加管理员失败: %v", err)
+		FailWithError(c, http.StatusInternalServerError, "添加管理员失败: %v", err)
 		return
 	}
 
@@ -62,24 +62,24 @@ type DeleteAdminRequest struct {
 func DeleteAdmin(c *gin.Context) {
 	role, _ := c.Get("role")
 	if role != "admin" {
-		c.String(http.StatusForbidden, "需要管理员权限")
+		FailWithError(c, http.StatusForbidden, "需要管理员权限")
 		return
 	}
 
 	var req DeleteAdminRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.String(http.StatusBadRequest, "无效的请求格式")
+		FailWithError(c, http.StatusBadRequest, "无效的请求格式")
 		return
 	}
 	LogOp(c, req, "删除管理员")
 
 	if req.SteamID == "" {
-		c.String(http.StatusBadRequest, "SteamID 不能为空")
+		FailWithError(c, http.StatusBadRequest, "SteamID 不能为空")
 		return
 	}
 
 	if err := logic.DeleteAdmin(req.SteamID); err != nil {
-		c.String(http.StatusInternalServerError, "删除管理员失败: %v", err)
+		FailWithError(c, http.StatusInternalServerError, "删除管理员失败: %v", err)
 		return
 	}
 

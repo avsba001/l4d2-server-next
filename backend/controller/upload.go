@@ -16,16 +16,16 @@ import (
 
 func Upload(c *gin.Context) {
 	if stat, err := disk.Usage(consts.AddonsBasePath); err != nil {
-		c.String(http.StatusInternalServerError, "获取磁盘使用信息失败: %v", err)
+		FailWithError(c, http.StatusInternalServerError, "获取磁盘使用信息失败: %v", err)
 		return
 	} else if stat.UsedPercent > 90 {
-		c.String(http.StatusInternalServerError, "磁盘空间不足，当前使用率超过90%")
+		FailWithError(c, http.StatusInternalServerError, "磁盘空间不足，当前使用率超过90%%")
 		return
 	}
 
 	file, err := c.FormFile("map")
 	if err != nil {
-		c.String(http.StatusBadRequest, "文件信息有误")
+		FailWithError(c, http.StatusBadRequest, "文件信息有误")
 		return
 	}
 
@@ -35,12 +35,12 @@ func Upload(c *gin.Context) {
 	sevenZipReg := regexp.MustCompile(`\.7z$`)
 
 	if !vpkReg.Match([]byte(file.Filename)) {
-		c.String(http.StatusBadRequest, "错误的文件类型，只支持vpk, zip, rar, 7z文件")
+		FailWithError(c, http.StatusBadRequest, "错误的文件类型，只支持vpk, zip, rar, 7z文件")
 		return
 	}
 
 	if file.Size > 2<<30 {
-		c.String(http.StatusBadRequest, "文件超过2GB，禁止上传")
+		FailWithError(c, http.StatusBadRequest, "文件超过2GB，禁止上传")
 		return
 	}
 
@@ -48,7 +48,7 @@ func Upload(c *gin.Context) {
 	if zipReg.Match([]byte(file.Filename)) {
 		files, err := handleZipFile(c, file)
 		if err != nil {
-			c.String(http.StatusInternalServerError, "解压Zip失败: %v", err)
+			FailWithError(c, http.StatusInternalServerError, "解压Zip失败: %v", err)
 			return
 		}
 		LogOp(c, nil, "上传文件:", file.Filename, "解压文件:", fmt.Sprintf("%v", files))
@@ -61,7 +61,7 @@ func Upload(c *gin.Context) {
 	if rarReg.Match([]byte(file.Filename)) {
 		files, err := handleRarFile(c, file)
 		if err != nil {
-			c.String(http.StatusInternalServerError, "解压Rar失败: %v", err)
+			FailWithError(c, http.StatusInternalServerError, "解压Rar失败: %v", err)
 			return
 		}
 		LogOp(c, nil, "上传文件:", file.Filename, "解压文件:", fmt.Sprintf("%v", files))
@@ -74,7 +74,7 @@ func Upload(c *gin.Context) {
 	if sevenZipReg.Match([]byte(file.Filename)) {
 		files, err := handle7zFile(c, file)
 		if err != nil {
-			c.String(http.StatusInternalServerError, "解压7z失败: %v", err)
+			FailWithError(c, http.StatusInternalServerError, "解压7z失败: %v", err)
 			return
 		}
 		LogOp(c, nil, "上传文件:", file.Filename, "解压文件:", fmt.Sprintf("%v", files))
@@ -89,14 +89,14 @@ func Upload(c *gin.Context) {
 
 	// 检查文件是否已存在
 	if err := checkMapExists(cleanFilename); err != nil {
-		c.String(http.StatusBadRequest, "检查文件失败: %v", err)
+		FailWithError(c, http.StatusBadRequest, "检查文件失败: %v", err)
 		return
 	}
 
 	// 保存上传的文件
 	tempPath := filepath.Join(consts.AddonsBasePath, "temp_"+cleanFilename)
 	if err := c.SaveUploadedFile(file, tempPath); err != nil {
-		c.String(http.StatusInternalServerError, "文件写入失败: %v", err)
+		FailWithError(c, http.StatusInternalServerError, "文件写入失败: %v", err)
 		return
 	}
 
@@ -104,7 +104,7 @@ func Upload(c *gin.Context) {
 	files, err := ProcessVpkFile(tempPath)
 	if err != nil {
 		os.Remove(tempPath) // 清理临时文件
-		c.String(http.StatusInternalServerError, "处理文件失败: %v", err)
+		FailWithError(c, http.StatusInternalServerError, "处理文件失败: %v", err)
 		return
 	}
 	LogOp(c, nil, "上传文件:", file.Filename, "保存文件:", fmt.Sprintf("%v", files))
