@@ -17,6 +17,7 @@
     CopyOutlined,
     StopOutlined,
     PlusOutlined,
+    SettingOutlined,
   } from '@ant-design/icons-vue';
   import { Modal, message } from 'ant-design-vue';
   import { copyToClipboard as copyText } from '../utils/clipboard';
@@ -55,6 +56,9 @@
   const showMapModal = ref(false);
   const showDifficultyModal = ref(false);
   const showGameModeModal = ref(false);
+  const showMaxPlayersModal = ref(false);
+  const tempMaxPlayers = ref<number>();
+  const savingMaxPlayers = ref(false);
 
   const loadStatus = async () => {
     loading.value = true;
@@ -193,6 +197,30 @@
       message.success('已复制 SteamID');
     } else {
       message.error('复制失败，请手动复制');
+    }
+  };
+
+  const openMaxPlayersModal = () => {
+    tempMaxPlayers.value = undefined;
+    showMaxPlayersModal.value = true;
+  };
+
+  const saveMaxPlayers = async () => {
+    if (!tempMaxPlayers.value || tempMaxPlayers.value < 4 || tempMaxPlayers.value > 30) {
+      message.warning('人数必须在 4-30 之间');
+      return;
+    }
+
+    try {
+      savingMaxPlayers.value = true;
+      await api.setMaxPlayers(tempMaxPlayers.value);
+      message.success('最大人数设置成功');
+      showMaxPlayersModal.value = false;
+      loadStatus();
+    } catch (e: any) {
+      message.error('设置失败: ' + e.message);
+    } finally {
+      savingMaxPlayers.value = false;
     }
   };
 
@@ -339,6 +367,16 @@
         <span class="text-sm font-normal text-gray-500 dark:text-gray-400 ml-2">
           ({{ status?.Players?.value || '0/0' }})
         </span>
+        <a-tooltip title="设置临时最大人数">
+          <a-button
+            type="text"
+            size="small"
+            class="!text-gray-400 hover:!text-blue-500"
+            @click="openMaxPlayersModal"
+          >
+            <template #icon><SettingOutlined /></template>
+          </a-button>
+        </a-tooltip>
       </h3>
 
       <div v-if="status?.Users?.users?.length" class="flex flex-col gap-3">
@@ -631,7 +669,37 @@
     <!-- Modals -->
     <MapSelectorModal v-model:open="showMapModal" />
     <DifficultyModal v-model:open="showDifficultyModal" />
-    <GameModeModal v-model:open="showGameModeModal" />
+    <GameModeModal v-model:open="showGameModeModal" @success="loadStatus" />
+
+    <a-modal
+      v-model:open="showMaxPlayersModal"
+      title="设置临时最大人数"
+      :confirm-loading="savingMaxPlayers"
+      @ok="saveMaxPlayers"
+    >
+      <div class="flex flex-col gap-4 py-4">
+        <a-alert
+          type="warning"
+          show-icon
+          message="临时设置"
+          description="此设置仅临时生效，重启服务器后将失效。若需要持久化人数设置，请启用 sset 插件或添加到服务器配置(server.cfg)中。注意，需要人数破解插件支持!"
+        />
+        <div class="flex items-center gap-4">
+          <span class="whitespace-nowrap">最大玩家数:</span>
+          <a-input-number
+            v-model:value="tempMaxPlayers"
+            :min="4"
+            :max="30"
+            class="w-full"
+            placeholder="4-30"
+            addon-after="人"
+          />
+        </div>
+        <div class="text-gray-500 text-xs">
+          范围: 4 - 30 人。修改后将执行 sv_maxplayers 和 sv_visiblemaxplayers 指令。
+        </div>
+      </div>
+    </a-modal>
   </div>
 </template>
 

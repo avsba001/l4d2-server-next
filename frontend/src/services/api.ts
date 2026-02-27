@@ -141,6 +141,12 @@ class ApiService {
     return response.text();
   }
 
+  async setMaxPlayers(maxPlayers: number) {
+    const response = await this.post('/rcon/setmaxplayers', { maxPlayers });
+    if (!response.ok) throw new Error(await response.text());
+    return response.text();
+  }
+
   async getPlugins() {
     const response = await this.post('/plugins/list');
     if (!response.ok) throw new Error(await response.text());

@@ -108,6 +108,7 @@ func main() {
 		rcon.POST("/banuser", controller.BanUser)
 		rcon.POST("/changedifficulty", controller.ChangeDifficulty)
 		rcon.POST("/changegamemode", controller.ChangeGameMode)
+		rcon.POST("/setmaxplayers", controller.SetMaxPlayers)
 	}
 
 	// Download Group

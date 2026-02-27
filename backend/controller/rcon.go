@@ -477,6 +477,38 @@ func ChangeGameMode(c *gin.Context) {
 	c.String(http.StatusOK, "游戏模式切换成功")
 }
 
+func SetMaxPlayers(c *gin.Context) {
+	maxPlayersStr := c.PostForm("maxPlayers")
+	maxPlayers, err := strconv.Atoi(maxPlayersStr)
+	if err != nil || maxPlayers < 4 || maxPlayers > 30 {
+		FailWithError(c, http.StatusBadRequest, "人数必须在 4-30 之间")
+		return
+	}
+	LogOp(c, nil, "设置最大人数:", maxPlayersStr)
+
+	conn, err := getRconConnection()
+	if err != nil {
+		FailWithError(c, http.StatusInternalServerError, "连接RCON失败: %v", err)
+		return
+	}
+	defer conn.Close()
+
+	// sv_visiblemaxplayers first, then sv_maxplayers
+	_, err = conn.Execute(fmt.Sprintf("sv_visiblemaxplayers %d", maxPlayers))
+	if err != nil {
+		FailWithError(c, http.StatusInternalServerError, "设置可见人数失败: %v", err)
+		return
+	}
+
+	_, err = conn.Execute(fmt.Sprintf("sv_maxplayers %d", maxPlayers))
+	if err != nil {
+		FailWithError(c, http.StatusInternalServerError, "设置最大人数失败: %v", err)
+		return
+	}
+
+	c.String(http.StatusOK, "人数设置成功")
+}
+
 func Rcon(c *gin.Context) {
 	cmd := c.PostForm("cmd")
 	if cmd == "" {
