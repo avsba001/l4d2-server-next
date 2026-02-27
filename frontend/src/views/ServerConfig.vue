@@ -73,12 +73,20 @@
               <a-input
                 v-model:value="form.custom_config[index]"
                 placeholder="例如: exec banned_user.cfg"
-                class="font-mono text-sm"
+                class="font-mono text-sm flex-1"
                 :disabled="!isAdmin"
               />
-              <a-button danger @click="removeCustomConfig(index)" :disabled="!isAdmin">
-                删除
-              </a-button>
+              <div class="flex-shrink-0">
+                <a-popconfirm
+                  title="确认删除该行吗？"
+                  ok-text="确定"
+                  cancel-text="取消"
+                  @confirm="removeCustomConfig(index)"
+                  :disabled="!isAdmin"
+                >
+                  <a-button danger :disabled="!isAdmin"> 删除 </a-button>
+                </a-popconfirm>
+              </div>
             </div>
 
             <div
