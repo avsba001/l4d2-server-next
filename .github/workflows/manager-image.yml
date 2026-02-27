@@ -45,5 +45,5 @@ jobs:
           labels: ${{ steps.meta-manager.outputs.labels }}
           build-args: |
             VERSION=${{ github.ref_name }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=manager-global-cache
+          cache-to: type=gha,mode=max,scope=manager-global-cache

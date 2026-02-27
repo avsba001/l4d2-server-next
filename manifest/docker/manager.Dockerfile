@@ -18,8 +18,8 @@ RUN go build -ldflags "-X l4d2-manager-next/consts.Version=${VERSION}" -o /app/l
 # Stage 3: Final Image
 FROM docker:29.1.1-cli-alpine3.22
 EXPOSE 27020
-COPY ./backend/preset.yaml /
 COPY ./plugins /plugins
+COPY ./backend/preset.yaml /
 COPY --from=builder /app/l4d2-manager /
 COPY --from=builder /app/backend/ip2region_v4.xdb /
 COPY --from=builder /app/backend/ip2region_v6.xdb /
