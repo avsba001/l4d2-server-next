@@ -50,7 +50,6 @@ preset:
       - name: 自选-后备弹药插件(豆瓣酱な)
       - name: 自选-换图类(投票换图)(v1.1)(fdxx, sorallll, HatsuneImagine)
       - name: 自选-换图类(自动换图)(v1.0.5)(Alex Dragokas, fdxx, sorallll)
-      - name: 自选-击杀或爆头和黑枪提示和关闭队伤(1.0.4)(豆瓣酱な)
       - name: 自选-排行榜插件(v2.19.23)(豆瓣酱な)(sorallll)
         configs:
           - name: l4d2_emshud_info.cfg
@@ -146,7 +145,6 @@ preset:
       - name: 自选-后备弹药插件(豆瓣酱な)
       - name: 自选-换图类(投票换图)(v1.1)(fdxx, sorallll, HatsuneImagine)
       - name: 自选-换图类(自动换图)(v1.0.5)(Alex Dragokas, fdxx, sorallll)
-      - name: 自选-击杀或爆头和黑枪提示和关闭队伤(1.0.4)(豆瓣酱な)
       - name: 自选-击杀特感和女巫奖励血量(v1.1.4)(豆瓣酱な)
         configs:
           - name: l4d2_health_rewards.cfg
@@ -269,7 +267,6 @@ preset:
       - name: 自选-管理员指令!sset设置人数(v1.2.7)(豆瓣酱な)
       - name: 自选-换图类(投票换图)(v1.1)(fdxx, sorallll, HatsuneImagine)
       - name: 自选-换图类(自动换图)(v1.0.5)(Alex Dragokas, fdxx, sorallll)
-      - name: 自选-击杀或爆头和黑枪提示和关闭队伤(1.0.4)(豆瓣酱な)
       - name: 自选-伤害显示插件(Mineralcr)
         configs:
           - name: l4d2_damage_show.cfg
@@ -340,7 +337,6 @@ preset:
       - name: 自选-管理员指令!sset设置人数(v1.2.7)(豆瓣酱な)
       - name: 自选-后备弹药插件(豆瓣酱な)
       - name: 自选-换图类(投票换图)(v1.1)(fdxx, sorallll, HatsuneImagine)
-      - name: 自选-击杀或爆头和黑枪提示和关闭队伤(1.0.4)(豆瓣酱な)
       - name: 自选-排行榜插件(v2.19.23)(豆瓣酱な)(sorallll)
         configs:
           - name: l4d2_emshud_info.cfg
