@@ -117,8 +117,27 @@ func UpdateServerConfig(c *gin.Context) {
 	}
 	LogOp(c, req, "更新服务器配置")
 
-	configPath := filepath.Join(consts.GamePath, "cfg", "server.cfg")
+	// Update main config
+	mainConfigPath := filepath.Join(consts.GamePath, "cfg", "server.cfg")
+	if err := updateConfigFile(mainConfigPath, req); err != nil {
+		FailWithError(c, http.StatusInternalServerError, "保存 server.cfg 失败: %v", err)
+		return
+	}
 
+	// Sync to other files independently (preserving their unique top content)
+	syncFiles := []string{"server.cfg.100tick", "server.cfg.60tick", "server.cfg.30tick"}
+	for _, fname := range syncFiles {
+		fpath := filepath.Join(consts.GamePath, "cfg", fname)
+		if _, err := os.Stat(fpath); err == nil {
+			// Ignore errors for sync files, just log/continue
+			updateConfigFile(fpath, req)
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "保存成功"})
+}
+
+func updateConfigFile(configPath string, req UpdateServerConfigRequest) error {
 	// Read existing file to preserve other settings
 	contentBytes, err := os.ReadFile(configPath)
 	var lines []string
@@ -126,7 +145,7 @@ func UpdateServerConfig(c *gin.Context) {
 		lines = strings.Split(string(contentBytes), "\n")
 	}
 
-	// Pass 1: Extract original tags from ALL lines
+	// Pass 1: Extract original tags from ALL lines of THIS file
 	originalTags := []string{}
 	for _, line := range lines {
 		trimmed := strings.TrimSpace(line)
@@ -220,20 +239,6 @@ func UpdateServerConfig(c *gin.Context) {
 
 	finalContent := strings.Join(newLines, "\n")
 
-	// Write server.cfg
-	if err := os.WriteFile(configPath, []byte(finalContent), 0644); err != nil {
-		FailWithError(c, http.StatusInternalServerError, "保存配置文件失败: %v", err)
-		return
-	}
-
-	// Sync to other files
-	syncFiles := []string{"server.cfg.100tick", "server.cfg.60tick", "server.cfg.30tick"}
-	for _, fname := range syncFiles {
-		fpath := filepath.Join(consts.GamePath, "cfg", fname)
-		if _, err := os.Stat(fpath); err == nil {
-			os.WriteFile(fpath, []byte(finalContent), 0644)
-		}
-	}
-
-	c.JSON(http.StatusOK, gin.H{"message": "保存成功"})
+	// Write file
+	return os.WriteFile(configPath, []byte(finalContent), 0644)
 }
