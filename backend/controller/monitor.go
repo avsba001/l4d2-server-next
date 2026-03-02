@@ -2,6 +2,7 @@ package controller
 
 import (
 	"bufio"
+	"l4d2-manager-next/consts"
 	"l4d2-manager-next/db"
 	"l4d2-manager-next/model"
 	"net/http"
@@ -78,15 +79,12 @@ func StartMonitor() {
 		sMem, _ := mem.SwapMemory()
 
 		// 硬盘
-		// 获取包含当前工作目录的分区使用情况
+		// 获取 addons 目录所在分区的磁盘使用情况
 		var totalDisk, usedDisk uint64
-		cwd, err := os.Getwd()
+		usage, err := disk.Usage(consts.AddonsBasePath)
 		if err == nil {
-			usage, err := disk.Usage(cwd)
-			if err == nil {
-				totalDisk = usage.Total
-				usedDisk = usage.Used
-			}
+			totalDisk = usage.Total
+			usedDisk = usage.Used
 		}
 
 		// 网络
