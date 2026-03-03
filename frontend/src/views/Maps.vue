@@ -339,8 +339,7 @@
                 class="!flex !items-center !justify-center"
               >
                 <template #icon><delete-outlined /></template>
-                <span class="hidden sm:inline">清空所有</span>
-                <span class="sm:hidden">清空</span>
+                清空地图
               </a-button>
             </div>
           </div>
