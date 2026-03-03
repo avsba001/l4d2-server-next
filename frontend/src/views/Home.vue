@@ -200,6 +200,12 @@
     }
   };
 
+  const openIpQuery = (ip: string) => {
+    if (!ip) return;
+    const cleanIp = ip.split(':')[0];
+    window.open(`https://www.ip138.com/iplookup.php?ip=${cleanIp}`, '_blank');
+  };
+
   const openMaxPlayersModal = () => {
     tempMaxPlayers.value = undefined;
     showMaxPlayersModal.value = true;
@@ -473,9 +479,20 @@
                 class="text-xs text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
               />
             </div>
-            <div v-if="user.ip" class="flex items-center gap-1.5 min-w-[120px]">
-              <span class="text-gray-400 dark:text-gray-500">IP</span>
-              <span class="font-mono select-all truncate">{{ user.ip.split(':')[0] }}</span>
+            <div
+              v-if="user.ip"
+              class="flex items-center gap-1.5 min-w-[120px] group cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded px-1 -ml-1 transition-colors"
+              @click="openIpQuery(user.ip)"
+              title="点击查询 IP 归属地"
+            >
+              <span class="text-gray-400 dark:text-gray-500 shrink-0">IP</span>
+              <span
+                class="font-mono truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors"
+                >{{ user.ip.split(':')[0] }}</span
+              >
+              <GlobalOutlined
+                class="text-xs text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+              />
             </div>
             <div class="flex items-center gap-1.5 min-w-[80px]" title="Latency">
               <WifiOutlined class="text-gray-400 dark:text-gray-500" />
