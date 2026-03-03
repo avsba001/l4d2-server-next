@@ -377,7 +377,7 @@
           <a-button
             type="text"
             size="small"
-            class="!text-gray-400 hover:!text-blue-500"
+            class="!text-gray-400 hover:!text-blue-500 !flex !items-center !justify-center"
             @click="openMaxPlayersModal"
           >
             <template #icon><SettingOutlined /></template>
