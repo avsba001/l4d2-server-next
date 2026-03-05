@@ -69,7 +69,7 @@ preset:
       - name: 自选-生还者对坦克的伤害排名(v1.4.8)(豆瓣酱な)
       - name: 自选-生还者过关时满血或复活(v1.1.1)(豆瓣酱な)
       - name: 自选-尸体直接消失(无特效)(SilverShot)
-      - name: 自选-十字命中反馈插件带声音(需要客户端同时安装vpk)(TsukasaSato)
+      - name: 自选-十字命中反馈插件带声音(需要客户端同时安装vpk)(新版)(v1.1.1)(TsukasaSato)
       - name: 自选-坦克或女巫出现时根据生还者人数增加血量(v1.7.8)(Visor,豆瓣酱な)
         configs:
           - name: l4d2_tank_announce.cfg
@@ -190,7 +190,7 @@ preset:
       - name: 自选-生还者对坦克的伤害排名(v1.4.8)(豆瓣酱な)
       - name: 自选-生还者过关时满血或复活(v1.1.1)(豆瓣酱な)
       - name: 自选-尸体直接消失(无特效)(SilverShot)
-      - name: 自选-十字命中反馈插件带声音(需要客户端同时安装vpk)(TsukasaSato)
+      - name: 自选-十字命中反馈插件带声音(需要客户端同时安装vpk)(新版)(v1.1.1)(TsukasaSato)
       - name: 自选-坦克或女巫出现时根据生还者人数增加血量(v1.7.8)(Visor,豆瓣酱な)
         configs:
           - name: l4d2_tank_announce.cfg
@@ -276,7 +276,7 @@ preset:
       - name: 自选-生还者对女巫的伤害排名(v1.2.5)(豆瓣酱な)
       - name: 自选-生还者对坦克的伤害排名(v1.4.8)(豆瓣酱な)
       - name: 自选-尸体直接消失(无特效)(SilverShot)
-      - name: 自选-十字命中反馈插件带声音(需要客户端同时安装vpk)(TsukasaSato)
+      - name: 自选-十字命中反馈插件带声音(需要客户端同时安装vpk)(新版)(v1.1.1)(TsukasaSato)
       - name: 自选-坦克特感女巫血量显示和坦克死亡提示(v1.0.4)(NiCo-op, Edited By Ernecio (Satanael))
       - name: 自选-玩家自杀指令(v1.1.4)(豆瓣酱な)
         configs:
@@ -353,7 +353,7 @@ preset:
               cf_hint_alpha: "200"
               cf_hint_mode_add: "0"
       - name: 自选-尸体直接消失(无特效)(SilverShot)
-      - name: 自选-十字命中反馈插件带声音(需要客户端同时安装vpk)(TsukasaSato)
+      - name: 自选-十字命中反馈插件带声音(需要客户端同时安装vpk)(新版)(v1.1.1)(TsukasaSato)
       - name: 自选-坦克特感女巫血量显示和坦克死亡提示(v1.0.4)(NiCo-op, Edited By Ernecio (Satanael))
       - name: 自选-玩家自杀指令(v1.1.4)(豆瓣酱な)
         configs:
