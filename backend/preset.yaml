@@ -145,6 +145,7 @@ preset:
       - name: 自选-后备弹药插件(豆瓣酱な)
       - name: 自选-换图类(投票换图)(v1.1)(fdxx, sorallll, HatsuneImagine)
       - name: 自选-换图类(自动换图)(v1.0.5)(Alex Dragokas, fdxx, sorallll)
+      - name: 自选-获取自定义的女巫编号(v1.3.5)(豆瓣酱な)
       - name: 自选-击杀特感和女巫奖励血量(v1.1.4)(豆瓣酱な)
         configs:
           - name: l4d2_health_rewards.cfg
