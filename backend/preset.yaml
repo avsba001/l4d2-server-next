@@ -95,7 +95,7 @@ preset:
           - name: l4d2_antimelee.cfg
             values:
               l4d2_melee_tank_damage: "500"
-      - name: 自选-友伤与反伤控制(v1.2)(可投票，需要原生投票库前置)(LaoYutang)
+      - name: 自选-友伤与反伤控制(v1.3)(可投票，需要原生投票库前置)(LaoYutang)
       - name: 自选-阻止游戏自带的部分提示(v1.1.2)(豆瓣酱な)
   - name: 娱乐多特战役
     desc: 娱乐多特，比标准多特增加了杀特回血与自动复活，适合娱乐
@@ -223,7 +223,7 @@ preset:
           - name: l4d2_antimelee.cfg
             values:
               l4d2_melee_tank_damage: "500"
-      - name: 自选-友伤与反伤控制(v1.2)(可投票，需要原生投票库前置)(LaoYutang)
+      - name: 自选-友伤与反伤控制(v1.3)(可投票，需要原生投票库前置)(LaoYutang)
       - name: 自选-阻止游戏自带的部分提示(v1.1.2)(豆瓣酱な)
   - name: 纯净战役
     desc: 纯净战役，新人开服必备
