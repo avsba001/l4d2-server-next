@@ -462,56 +462,74 @@
 
           <!-- Details (Middle) -->
           <div
-            class="flex-1 w-full md:w-auto grid grid-cols-2 sm:grid-cols-3 md:flex md:flex-wrap items-center gap-x-2 gap-y-2 text-xs text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-transparent md:bg-transparent p-2 md:p-0 rounded-lg md:rounded-none"
+            class="flex-1 w-full md:w-auto flex flex-wrap items-center gap-x-6 gap-y-2 text-xs text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-transparent md:bg-transparent p-2 md:p-0 rounded-lg md:rounded-none"
           >
+            <!-- ID & Location Stack -->
             <div
-              v-if="user.steamid"
-              class="flex items-center gap-1.5 col-span-2 sm:col-span-1 w-full md:w-[210px] group cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded px-1 -ml-1 transition-colors"
-              @click="copyToClipboard(user.steamid)"
-              title="点击复制 SteamID"
+              class="flex flex-col justify-center gap-1 w-full md:w-[240px] shrink-0 h-full pt-1"
             >
-              <span class="text-gray-400 dark:text-gray-500 shrink-0">SteamID</span>
-              <span
-                class="font-mono truncate min-w-0 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors"
-                >{{ user.steamid }}</span
+              <!-- Location (Primary) -->
+              <div>
+                <a-tooltip :title="user.location || (user.ip ? user.ip.split(':')[0] : '未知')">
+                  <div
+                    v-if="user.location || user.ip"
+                    class="flex items-center gap-2 group cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded px-1 -ml-1 border border-transparent hover:border-gray-200 dark:hover:border-gray-600 transition-all box-border h-[22px]"
+                    @click="openIpQuery(user.ip)"
+                  >
+                    <div class="flex justify-end w-12 shrink-0">
+                      <span class="text-xs font-bold text-gray-500 dark:text-gray-400">ASN</span>
+                    </div>
+                    <span
+                      class="truncate text-xs font-medium text-gray-900 dark:text-gray-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors"
+                      >{{ user.location || (user.ip ? user.ip.split(':')[0] : '未知') }}</span
+                    >
+                  </div>
+                </a-tooltip>
+              </div>
+
+              <!-- SteamID (Secondary) -->
+              <div
+                v-if="user.steamid"
+                class="flex items-center gap-2 group cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded px-1 -ml-1 border border-transparent hover:border-gray-200 dark:hover:border-gray-600 transition-all box-border h-[22px]"
+                @click="copyToClipboard(user.steamid)"
+                title="点击复制 SteamID"
               >
-              <CopyOutlined
-                class="text-xs text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
-              />
+                <div class="flex justify-end w-12 shrink-0">
+                  <span class="text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-wide"
+                    >SteamID</span
+                  >
+                </div>
+                <span
+                  class="font-mono text-xs text-gray-500 dark:text-gray-400 truncate min-w-0 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors"
+                  >{{ user.steamid }}</span
+                >
+                <CopyOutlined
+                  class="text-[10px] text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+                />
+              </div>
             </div>
-            <div
-              v-if="user.ip"
-              class="flex items-center gap-1.5 min-w-[120px] group cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded px-1 -ml-1 transition-colors"
-              @click="openIpQuery(user.ip)"
-              title="点击查询 IP 归属地"
-            >
-              <span class="text-gray-400 dark:text-gray-500 shrink-0">IP</span>
-              <span
-                class="font-mono truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors"
-                >{{ user.ip.split(':')[0] }}</span
+
+            <!-- Network Stats Group -->
+            <div class="flex items-center gap-4 whitespace-nowrap">
+              <div class="flex items-center gap-1.5 min-w-[60px]" title="Latency">
+                <WifiOutlined class="text-gray-400 dark:text-gray-500" />
+                <span>{{ user.delay || 0 }}ms</span>
+              </div>
+              <div class="flex items-center gap-1.5 min-w-[70px]" title="Packet Loss">
+                <span
+                  class="w-1.5 h-1.5 rounded-full"
+                  :class="(user.loss || 0) > 0 ? 'bg-red-400' : 'bg-green-400'"
+                ></span>
+                <span>{{ user.loss || 0 }}% Loss</span>
+              </div>
+              <div
+                v-if="user.duration"
+                class="flex items-center gap-1.5 min-w-[60px]"
+                title="Duration"
               >
-              <GlobalOutlined
-                class="text-xs text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
-              />
-            </div>
-            <div class="flex items-center gap-1.5 min-w-[80px]" title="Latency">
-              <WifiOutlined class="text-gray-400 dark:text-gray-500" />
-              <span>{{ user.delay || 0 }}ms</span>
-            </div>
-            <div class="flex items-center gap-1.5 min-w-[80px]" title="Packet Loss">
-              <span
-                class="w-1.5 h-1.5 rounded-full"
-                :class="(user.loss || 0) > 0 ? 'bg-red-400' : 'bg-green-400'"
-              ></span>
-              <span>{{ user.loss || 0 }}% Loss</span>
-            </div>
-            <div
-              v-if="user.duration"
-              class="flex items-center gap-1.5 min-w-[80px]"
-              title="Duration"
-            >
-              <ClockCircleOutlined class="text-gray-400 dark:text-gray-500" />
-              <span>{{ user.duration }}</span>
+                <ClockCircleOutlined class="text-gray-400 dark:text-gray-500" />
+                <span>{{ user.duration }}</span>
+              </div>
             </div>
           </div>
 

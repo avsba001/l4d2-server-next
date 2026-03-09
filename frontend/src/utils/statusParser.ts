@@ -5,6 +5,7 @@ export interface PlayerInfo {
   name: string;
   steamid: string;
   ip: string;
+  location?: string;
   status: string;
   delay: number;
   loss: number;
@@ -174,6 +175,7 @@ export function parseStatus(data: any): ParsedServerStatus {
           name: u.name || u.Name,
           steamid: u.steamid || u.SteamId,
           ip: u.ip || u.Ip,
+          location: u.location || u.Location,
           status: u.status || u.Status,
           delay: u.delay || u.Delay,
           loss: u.loss || u.Loss,

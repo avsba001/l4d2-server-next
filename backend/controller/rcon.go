@@ -3,6 +3,7 @@ package controller
 import (
 	"fmt"
 	"l4d2-manager-next/logic"
+	"l4d2-manager-next/utility"
 	"net/http"
 	"os"
 	"regexp"
@@ -81,6 +82,7 @@ type User struct {
 	Id       int
 	SteamId  string
 	Ip       string
+	Location string
 	Status   string
 	Delay    int
 	Loss     int
@@ -280,12 +282,19 @@ func parseUser(line string) *User {
 	delay, _ := strconv.Atoi(matches[6])
 	loss, _ := strconv.Atoi(matches[7])
 	linkRate, _ := strconv.Atoi(matches[9])
+	ip := matches[10]
+
+	location := utility.GetLocation(ip)
+	if location == "" {
+		location = "未知"
+	}
 
 	return &User{
 		Name:     matches[3],
 		Id:       userid,
 		SteamId:  matches[4],
-		Ip:       matches[10],
+		Ip:       ip,
+		Location: location,
 		Status:   matches[8],
 		Delay:    delay,
 		Loss:     loss,

@@ -5,6 +5,7 @@ import (
 	"l4d2-manager-next/controller"
 	"l4d2-manager-next/db"
 	"l4d2-manager-next/middlewares"
+	"l4d2-manager-next/utility"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -22,10 +23,14 @@ func main() {
 
 	router := gin.Default()
 
-	// Initialize GeoIP if enabled (REGION_WHITE_LIST is set)
-	if os.Getenv("REGION_WHITE_LIST") != "" {
-		if middlewares.InitGeoIP("./ip2region_v4.xdb", "./ip2region_v6.xdb") {
-			defer middlewares.CloseGeoIP()
+	// Initialize GeoIP
+	// Try to initialize regardless of whitelist setting to enable location query
+	if utility.InitGeoIP("./ip2region_v4.xdb", "./ip2region_v6.xdb") {
+		defer utility.CloseGeoIP()
+		// Initialize middleware state (whitelist)
+		middlewares.InitGeoIPMiddleware()
+		// Only apply blocking middleware if whitelist is configured
+		if os.Getenv("REGION_WHITE_LIST") != "" {
 			router.Use(middlewares.BlockForeignIPs())
 		}
 	}

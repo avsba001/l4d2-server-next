@@ -2,46 +2,22 @@ package middlewares
 
 import (
 	"fmt"
+	"l4d2-manager-next/utility"
 	"net/http"
 	"os"
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/lionsoul2014/ip2region/binding/golang/service"
 )
 
 var (
-	ipRegionService *service.Ip2Region
-	allowedRegions  []string
+	allowedRegions []string
 )
 
-// InitGeoIP initializes the ip2region service with v4 and v6 databases
-// and parses the REGION_WHITE_LIST environment variable
-func InitGeoIP(v4Path, v6Path string) bool {
-	var err error
-
-	// 1. Create v4 config
-	v4Config, err := service.NewV4Config(service.VIndexCache, v4Path, 20)
-	if err != nil {
-		fmt.Printf("Failed to create v4 config: %v\n", err)
-		return false
-	}
-
-	// 2. Create v6 config
-	v6Config, err := service.NewV6Config(service.VIndexCache, v6Path, 20)
-	if err != nil {
-		fmt.Printf("Failed to create v6 config: %v\n", err)
-		return false
-	}
-
-	// 3. Create service
-	ipRegionService, err = service.NewIp2Region(v4Config, v6Config)
-	if err != nil {
-		fmt.Printf("Failed to create ip2region service: %v\n", err)
-		return false
-	}
-
-	// 4. Parse Whitelist
+// InitGeoIPMiddleware parses the REGION_WHITE_LIST environment variable
+// Note: GeoIP service initialization is now handled in utility.InitGeoIP
+func InitGeoIPMiddleware() {
+	// Parse Whitelist
 	whitelistEnv := os.Getenv("REGION_WHITE_LIST")
 	allowedRegions = []string{} // Reset
 	if whitelistEnv != "" {
@@ -61,8 +37,6 @@ func InitGeoIP(v4Path, v6Path string) bool {
 	} else {
 		fmt.Println("GeoIP middleware initialized. No whitelist (allowing all).")
 	}
-
-	return true
 }
 
 // BlockForeignIPs returns a middleware that blocks IPs not in REGION_WHITE_LIST
@@ -75,6 +49,7 @@ func BlockForeignIPs() gin.HandlerFunc {
 	}
 
 	return func(c *gin.Context) {
+		ipRegionService := utility.GetIPRegionService()
 		if ipRegionService == nil {
 			c.Next()
 			return
@@ -115,12 +90,5 @@ func BlockForeignIPs() gin.HandlerFunc {
 		// Log the blocked attempt
 		fmt.Printf("Blocked IP: %s, Region: %s\n", ip, region)
 		c.AbortWithStatus(http.StatusForbidden)
-	}
-}
-
-// CloseGeoIP closes the service
-func CloseGeoIP() {
-	if ipRegionService != nil {
-		ipRegionService.Close()
 	}
 }
