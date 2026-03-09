@@ -3,17 +3,23 @@ package utility
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/lionsoul2014/ip2region/binding/golang/service"
+	"github.com/patrickmn/go-cache"
 )
 
 var (
 	ipRegionService *service.Ip2Region
+	geoCache        *cache.Cache
 )
 
 // InitGeoIP initializes the ip2region service with v4 and v6 databases
 func InitGeoIP(v4Path, v6Path string) bool {
 	var err error
+
+	// Initialize cache with 24 hour expiration and 1 hour cleanup interval
+	geoCache = cache.New(24*time.Hour, 1*time.Hour)
 
 	// 1. Create v4 config
 	v4Config, err := service.NewV4Config(service.VIndexCache, v4Path, 20)
@@ -57,6 +63,11 @@ func GetLocation(ip string) string {
 		return "Localhost"
 	}
 
+	// Check cache
+	if val, found := geoCache.Get(ip); found {
+		return val.(string)
+	}
+
 	region, err := ipRegionService.SearchByStr(ip)
 	if err != nil {
 		return ""
@@ -73,6 +84,7 @@ func GetLocation(ip string) string {
 	// parts[3]: ISP (电信) - previously thought to be City
 	// parts[4]: Extra info (CN) - previously thought to be ISP
 
+	var result string
 	parts := strings.Split(region, "|")
 	if len(parts) >= 5 {
 		var validParts []string
@@ -96,13 +108,18 @@ func GetLocation(ip string) string {
 
 		// ISP (parts[3])
 		if parts[3] != "0" {
-			return fmt.Sprintf("[ %s ] %s", parts[3], locationStr)
+			result = fmt.Sprintf("[ %s ] %s", parts[3], locationStr)
+		} else {
+			result = locationStr
 		}
-
-		return locationStr
+	} else {
+		result = region
 	}
 
-	return region
+	// Cache the result
+	geoCache.Set(ip, result, cache.DefaultExpiration)
+
+	return result
 }
 
 // GetIPRegionService returns the initialized service instance
