@@ -40,13 +40,8 @@ func InitGeoIP(v4Path, v6Path string) bool {
 	return true
 }
 
-// GetLocation returns the location string (Country|Province|City|ISP) for a given IP
-// Format logic:
-// - Always include Country (if not 0)
-// - Always include Province (if not 0 and != Country)
-// - Always include City (if not 0 and != Province)
-// - Always include ISP (if not 0)
-// - Join with "|"
+// GetLocation returns the location string for a given IP
+// Format: [ ISP ] Country-Province-City
 func GetLocation(ip string) string {
 	if ipRegionService == nil {
 		return ""
@@ -87,24 +82,24 @@ func GetLocation(ip string) string {
 			validParts = append(validParts, parts[0])
 		}
 
-		// Province (parts[1]) - ADJUSTED INDEX
+		// Province (parts[1])
 		if parts[1] != "0" && parts[1] != parts[0] {
 			validParts = append(validParts, parts[1])
 		}
 
-		// City (parts[2]) - ADJUSTED INDEX
+		// City (parts[2])
 		if parts[2] != "0" && parts[2] != parts[1] {
 			validParts = append(validParts, parts[2])
 		}
 
-		// ISP (parts[3]) - ADJUSTED INDEX
+		locationStr := strings.Join(validParts, "-")
+
+		// ISP (parts[3])
 		if parts[3] != "0" {
-			validParts = append(validParts, parts[3])
+			return fmt.Sprintf("[ %s ] %s", parts[3], locationStr)
 		}
 
-		// Note: parts[4] ("CN") is ignored
-
-		return strings.Join(validParts, "|")
+		return locationStr
 	}
 
 	return region
