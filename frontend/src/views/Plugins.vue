@@ -476,25 +476,28 @@
     },
   ];
 
-  const storeColumns = [
-    {
-      title: '插件名称',
-      dataIndex: 'name',
-      key: 'name',
-      ellipsis: true,
-    },
-    {
-      title: '大小',
-      dataIndex: 'size',
-      key: 'size',
-      width: 100,
-    },
-    {
-      title: '操作',
-      key: 'actions',
-      width: 100,
-    },
-  ];
+  const storeColumns = computed(() => {
+    const cols = [
+      {
+        title: '插件名称',
+        dataIndex: 'name',
+        key: 'name',
+        ellipsis: true,
+      },
+      {
+        title: '大小',
+        dataIndex: 'size',
+        key: 'size',
+        width: 100,
+      },
+      {
+        title: '操作',
+        key: 'actions',
+        width: 100,
+      },
+    ];
+    return isMobile.value ? cols.filter((c) => c.key !== 'size') : cols;
+  });
 
   const formatSize = (bytes: number) => {
     if (bytes === 0) return '0 B';
