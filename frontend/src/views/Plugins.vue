@@ -12,6 +12,8 @@
     Upload as AUpload,
     RadioGroup as ARadioGroup,
     Alert as AAlert,
+    Drawer as ADrawer,
+    Select as ASelect,
   } from 'ant-design-vue';
   import {
     UploadOutlined,
@@ -21,6 +23,8 @@
     ReloadOutlined,
     SettingOutlined,
     SyncOutlined,
+    AppstoreAddOutlined,
+    DownloadOutlined,
   } from '@ant-design/icons-vue';
   import { api } from '../services/api';
   import type { UploadProps, TablePaginationConfig } from 'ant-design-vue';
@@ -28,11 +32,36 @@
   import { useAuthStore } from '../stores/auth';
 
   const authStore = useAuthStore();
+  const isMobile = ref(window.innerWidth < 768);
+
+  const handleResize = () => {
+    isMobile.value = window.innerWidth < 768;
+  };
+
+  onMounted(() => {
+    fetchPlugins();
+    window.addEventListener('resize', handleResize);
+  });
+
+  import { onUnmounted } from 'vue';
+  onUnmounted(() => {
+    window.removeEventListener('resize', handleResize);
+  });
+
+  const drawerWidth = computed(() => {
+    return isMobile.value ? '100%' : 800;
+  });
 
   interface Plugin {
     name: string;
     status: 'enabled' | 'disabled';
     description?: string;
+  }
+
+  interface StorePlugin {
+    name: string;
+    file_count: number;
+    size: number;
   }
 
   const plugins = ref<Plugin[]>([]);
@@ -43,6 +72,45 @@
   const selectedRowKeys = ref<string[]>([]);
   const searchText = ref('');
   const filterText = ref('');
+
+  // Store variables
+  const storeVisible = ref(false);
+  const storeLoading = ref(false);
+  const storePlugins = ref<StorePlugin[]>([]);
+  const storeSearchText = ref('');
+  const downloadingPlugin = ref<Record<string, boolean>>({});
+
+  const proxyOptions = [
+    { label: 'gh-proxy.com', value: 'https://gh-proxy.com/' },
+    { label: 'hk.gh-proxy.com', value: 'https://hk.gh-proxy.com/' },
+    { label: 'gh.llkk.cc', value: 'https://gh.llkk.cc/' },
+    { label: 'ghfast.top', value: 'https://ghfast.top/' },
+  ];
+
+  const savedProxy = localStorage.getItem('l4d2_manager_plugin_proxy');
+  const selectedProxy = ref<string[]>(savedProxy ? [savedProxy] : []);
+
+  watch(selectedProxy, (newVal) => {
+    let valToSave = '';
+    if (newVal && newVal.length > 0) {
+      // Keep only the last selected item to act as single select
+      if (newVal.length > 1) {
+        newVal.shift();
+      }
+
+      valToSave = newVal[0] || '';
+      // Auto prepend https:// if it's a custom input and doesn't have protocol
+      if (valToSave && !valToSave.startsWith('http://') && !valToSave.startsWith('https://')) {
+        valToSave = 'https://' + valToSave;
+        // Update the UI immediately to reflect the fixed URL
+        selectedProxy.value = [valToSave];
+      }
+    } else {
+      // Explicitly clear proxy
+      valToSave = '';
+    }
+    localStorage.setItem('l4d2_manager_plugin_proxy', valToSave);
+  });
 
   const configModalVisible = ref(false);
   const currentConfigPlugin = ref('');
@@ -218,6 +286,60 @@
     filterText.value = '';
   };
 
+  const openStore = async () => {
+    storeVisible.value = true;
+
+    // Refresh proxy value from localStorage when opening just in case it was empty
+    // But don't overwrite if user already has something
+    const saved = localStorage.getItem('l4d2_manager_plugin_proxy');
+    if (selectedProxy.value.length === 0 && saved) {
+      selectedProxy.value = [saved];
+    } else if (selectedProxy.value.length === 0 && (saved === '' || saved === null)) {
+      // Default behavior if nothing saved or explicitly empty (direct)
+      selectedProxy.value = [];
+    }
+
+    if (storePlugins.value.length === 0) {
+      fetchStorePlugins(false);
+    }
+  };
+
+  const fetchStorePlugins = async (forceRefresh: boolean = true) => {
+    storeLoading.value = true;
+    try {
+      const proxy = selectedProxy.value.length > 0 ? selectedProxy.value[0] || '' : '';
+      storePlugins.value = await api.getStorePlugins(forceRefresh, proxy);
+    } catch (error: any) {
+      message.error('获取商店列表失败: ' + error.message);
+    } finally {
+      storeLoading.value = false;
+    }
+  };
+
+  const filteredStorePlugins = computed(() => {
+    if (!storeSearchText.value) return storePlugins.value;
+    const lower = storeSearchText.value.toLowerCase();
+    return storePlugins.value.filter((p) => p.name.toLowerCase().includes(lower));
+  });
+
+  const downloadFromStore = async (plugin: StorePlugin) => {
+    if (downloadingPlugin.value[plugin.name]) return;
+
+    downloadingPlugin.value[plugin.name] = true;
+    const hide = message.loading(`正在下载 ${plugin.name}...`, 0);
+    try {
+      const proxy = selectedProxy.value.length > 0 ? selectedProxy.value[0] || '' : '';
+      await api.downloadStorePlugin(plugin.name, proxy);
+      message.success(`插件 ${plugin.name} 下载成功`);
+      fetchPlugins();
+    } catch (error: any) {
+      message.error(`下载失败: ` + error.message);
+    } finally {
+      downloadingPlugin.value[plugin.name] = false;
+      hide();
+    }
+  };
+
   watch(activeTab, () => {
     selectedRowKeys.value = [];
   });
@@ -294,10 +416,6 @@
     configModalVisible.value = true;
   };
 
-  onMounted(() => {
-    fetchPlugins();
-  });
-
   const enabledColumns = [
     {
       title: '插件名称',
@@ -325,6 +443,34 @@
       width: 200,
     },
   ];
+
+  const storeColumns = [
+    {
+      title: '插件名称',
+      dataIndex: 'name',
+      key: 'name',
+      ellipsis: true,
+    },
+    {
+      title: '大小',
+      dataIndex: 'size',
+      key: 'size',
+      width: 100,
+    },
+    {
+      title: '操作',
+      key: 'actions',
+      width: 100,
+    },
+  ];
+
+  const formatSize = (bytes: number) => {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
 
   const enabledPagination = reactive<TablePaginationConfig>({
     current: 1,
@@ -515,7 +661,7 @@
               </div>
             </div>
 
-            <div class="flex flex-col sm:flex-row gap-2 w-full lg:w-auto lg:items-center">
+            <div class="flex flex-row sm:flex-row gap-2 w-full lg:w-auto lg:items-center">
               <div
                 v-if="selectedRowKeys.length > 0 && authStore.isAdmin"
                 class="flex gap-2 w-full sm:w-auto"
@@ -542,25 +688,33 @@
                 </div>
               </div>
 
-              <a-upload
-                v-if="authStore.isAdmin"
-                v-model:file-list="fileList"
-                :before-upload="handleUpload"
-                accept=".zip"
-                :show-upload-list="false"
-                :disabled="uploading"
-                multiple
-                class="flex-1 sm:flex-none"
-              >
-                <a-button
-                  type="primary"
-                  :loading="uploading"
-                  class="!flex !items-center !justify-center w-full"
+              <div class="flex flex-row gap-2 w-full lg:w-auto">
+                <a-upload
+                  v-if="authStore.isAdmin"
+                  v-model:file-list="fileList"
+                  :before-upload="handleUpload"
+                  accept=".zip"
+                  :show-upload-list="false"
+                  :disabled="uploading"
+                  multiple
+                  class="flex-1"
                 >
-                  <template #icon><UploadOutlined /></template>
-                  上传插件 (.zip)
+                  <a-button :loading="uploading" class="!flex !items-center !justify-center w-full">
+                    <template #icon><UploadOutlined /></template>
+                    上传插件 (.zip)
+                  </a-button>
+                </a-upload>
+
+                <a-button
+                  v-if="authStore.isAdmin"
+                  type="primary"
+                  @click="openStore"
+                  class="flex-1 !flex !items-center !justify-center bg-green-600 hover:bg-green-500 border-green-600 hover:border-green-500"
+                >
+                  <template #icon><AppstoreAddOutlined /></template>
+                  插件商店
                 </a-button>
-              </a-upload>
+              </div>
             </div>
           </div>
 
@@ -671,13 +825,21 @@
                 <span
                   v-if="preset.desc"
                   class="text-sm mt-1 mb-0.5 whitespace-normal opacity-90"
-                  :class="selectedPreset === preset.name ? 'text-white' : 'text-gray-500 dark:text-gray-400'"
+                  :class="
+                    selectedPreset === preset.name
+                      ? 'text-white'
+                      : 'text-gray-500 dark:text-gray-400'
+                  "
                 >
                   {{ preset.desc }}
                 </span>
                 <span
                   class="text-xs mt-0.5 opacity-75"
-                  :class="selectedPreset === preset.name ? 'text-white' : 'text-gray-400 dark:text-gray-500'"
+                  :class="
+                    selectedPreset === preset.name
+                      ? 'text-white'
+                      : 'text-gray-400 dark:text-gray-500'
+                  "
                 >
                   包含 {{ preset.plugin_count || 0 }} 个插件
                 </span>
@@ -687,6 +849,90 @@
         </a-radio-group>
       </div>
     </a-modal>
+
+    <a-drawer v-model:open="storeVisible" title="插件商店" placement="right" :width="drawerWidth">
+      <div class="flex flex-col h-full">
+        <div class="mb-4 space-y-4">
+          <div class="flex flex-col sm:flex-row sm:items-center gap-2">
+            <span class="whitespace-nowrap font-medium text-gray-700 dark:text-gray-300"
+              >加速源:</span
+            >
+            <a-select
+              v-model:value="selectedProxy"
+              class="w-full sm:flex-1"
+              :options="proxyOptions"
+              mode="tags"
+              :max-tag-count="1"
+              show-search
+              allow-clear
+              placeholder="默认直连 (不使用加速)"
+            />
+          </div>
+
+          <div class="flex flex-col sm:flex-row gap-2">
+            <a-input
+              v-model:value="storeSearchText"
+              placeholder="搜索商店插件..."
+              allow-clear
+              class="w-full sm:flex-1"
+            >
+              <template #prefix>
+                <SearchOutlined class="text-gray-400" />
+              </template>
+            </a-input>
+            <a-button
+              @click="fetchStorePlugins(true)"
+              :loading="storeLoading"
+              class="w-full sm:w-auto !flex !items-center !justify-center"
+            >
+              <template #icon><SyncOutlined /></template>
+              刷新
+            </a-button>
+          </div>
+        </div>
+
+        <div class="flex-1 overflow-auto -mx-6 px-6">
+          <a-table
+            :columns="storeColumns"
+            :data-source="filteredStorePlugins"
+            :loading="storeLoading"
+            row-key="name"
+            :scroll="{ x: 'max-content' }"
+            :pagination="{
+              pageSize: 20,
+              showSizeChanger: true,
+              showTotal: (total) => `共 ${total} 个插件`,
+            }"
+            size="middle"
+          >
+            <template #bodyCell="{ column, record }">
+              <template v-if="column.key === 'name'">
+                <div class="truncate max-w-[150px] sm:max-w-[200px] md:max-w-[300px]">
+                  {{ record.name }}
+                </div>
+              </template>
+
+              <template v-else-if="column.key === 'size'">
+                {{ formatSize(record.size) }}
+              </template>
+
+              <template v-else-if="column.key === 'actions'">
+                <a-button
+                  type="primary"
+                  size="small"
+                  :loading="downloadingPlugin[record.name]"
+                  @click="downloadFromStore(record as StorePlugin)"
+                  class="!flex !items-center !justify-center"
+                >
+                  <template #icon><DownloadOutlined /></template>
+                  下载
+                </a-button>
+              </template>
+            </template>
+          </a-table>
+        </div>
+      </div>
+    </a-drawer>
 
     <PluginConfigModal v-model:open="configModalVisible" :plugin-name="currentConfigPlugin" />
   </div>
@@ -706,7 +952,12 @@
     margin-left: 0 !important;
   }
 
-  /* 防止 Popconfirm 文字换行跳动 */
+  /* Make Ant Design Upload component expand to fill flex container */
+  :deep(.ant-upload-wrapper),
+  :deep(.ant-upload) {
+    display: block;
+    width: 100%;
+  }
   :deep(.ant-popconfirm-message) {
     white-space: nowrap;
   }

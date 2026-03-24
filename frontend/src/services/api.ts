@@ -211,6 +211,21 @@ class ApiService {
     return response.json();
   }
 
+  async getStorePlugins(forceRefresh: boolean = false, proxyUrl: string = '') {
+    const response = await this.postJson('/plugins/store/list', {
+      force_refresh: forceRefresh,
+      proxy_url: proxyUrl,
+    });
+    if (!response.ok) throw new Error(await response.text());
+    const data = await response.json();
+    return data || [];
+  }
+
+  async downloadStorePlugin(name: string, proxyUrl: string) {
+    const response = await this.postJson('/plugins/store/download', { name, proxy_url: proxyUrl });
+    if (!response.ok) throw new Error(await response.text());
+  }
+
   async clearMaps() {
     const response = await this.post('/clear');
     if (!response.ok) throw new Error(await response.text());

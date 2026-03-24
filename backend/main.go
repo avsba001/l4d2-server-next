@@ -162,6 +162,8 @@ func main() {
 		plugins.POST("/config/update", controller.UpdatePluginConfig)
 		plugins.POST("/presets", controller.GetPresets)
 		plugins.POST("/apply-preset", controller.ApplyPreset)
+		plugins.POST("/store/list", controller.GetStorePlugins)
+		plugins.POST("/store/download", controller.DownloadStorePlugin)
 	}
 
 	// Admins Group

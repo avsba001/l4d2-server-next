@@ -67,6 +67,58 @@ func UploadPlugin(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "插件上传成功"})
 }
 
+type GetStorePluginsRequest struct {
+	ForceRefresh bool   `json:"force_refresh"`
+	ProxyUrl     string `json:"proxy_url"`
+}
+
+func GetStorePlugins(c *gin.Context) {
+	var req GetStorePluginsRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		// allow empty body
+	}
+
+	plugins, err := logic.FetchStorePlugins(req.ForceRefresh, req.ProxyUrl)
+	if err != nil {
+		FailWithError(c, http.StatusInternalServerError, "获取插件商店列表失败: %v", err)
+		return
+	}
+	c.JSON(http.StatusOK, plugins)
+}
+
+type DownloadPluginRequest struct {
+	Name     string `json:"name"`
+	ProxyUrl string `json:"proxy_url"`
+}
+
+func DownloadStorePlugin(c *gin.Context) {
+	role, _ := c.Get("role")
+	if role != "admin" {
+		FailWithError(c, http.StatusForbidden, "需要管理员权限")
+		return
+	}
+
+	var req DownloadPluginRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		FailWithError(c, http.StatusBadRequest, "参数错误: %v", err)
+		return
+	}
+
+	if req.Name == "" {
+		FailWithError(c, http.StatusBadRequest, "插件名称不能为空")
+		return
+	}
+
+	LogOp(c, req, "从商店下载插件:", req.Name)
+
+	if err := logic.DownloadStorePlugin(req.Name, req.ProxyUrl); err != nil {
+		FailWithError(c, http.StatusInternalServerError, "下载插件失败: %v", err)
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "插件下载成功"})
+}
+
 func EnablePlugin(c *gin.Context) {
 	role, _ := c.Get("role")
 	if role != "admin" {
