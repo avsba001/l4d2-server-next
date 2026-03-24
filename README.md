@@ -20,6 +20,7 @@
     *   支持在线上传插件文件。
     *   支持在线启用/禁用插件。
     *   **内置整合包**: 镜像中已包含 SourceMod、Metamod 以及大量热门实用插件，开箱即玩。
+    *   在线插件商店：直接在 Web 端浏览、搜索、安装 SourceMod 插件。[插件商店](https://github.com/LaoYutang/l4d2-plugins-store)
 *   **📊 服务器监控**
     *   实时仪表盘：显示 CPU、内存占用率。
     *   网络状态：监控服务器网络延迟与丢包率。
@@ -77,6 +78,7 @@ bash <(curl -sL https://gh.dpik.top/https://raw.githubusercontent.com/LaoYutang/
 ```yaml
 volumes:
   l4d2-data:
+  l4d2-plugins:
 
 networks:
   l4d2-network:
@@ -110,9 +112,11 @@ services:
       - "27020:27020"
     volumes:
       - l4d2-data:/left4dead2 # 与游戏服务器共享数据卷
+      - l4d2-plugins:/plugins # 插件数据持久化
       - /proc:/host/proc:ro # 挂载宿主机进程信息用于监控
       - /etc/localtime:/etc/localtime:ro # 同步宿主机时区
       - /etc/timezone:/etc/timezone:ro
+      - /var/run/docker.sock:/var/run/docker.sock # 允许管理器访问 Docker API（可选，若使用docker方式重启L4D2）
     environment:
       - L4D2_RESTART_BY_RCON=true
       - L4D2_MANAGER_PASSWORD=[web管理密码] # 请修改此处
@@ -137,6 +141,7 @@ docker run -d \
   --restart unless-stopped \
   --net host \
   -v /path/to/your/l4d2/left4dead2:/left4dead2 \
+  -v l4d2-plugins:/plugins \
   -v /proc:/host/proc:ro \
   -v /etc/localtime:/etc/localtime:ro \
   -v /etc/timezone:/etc/timezone:ro \
