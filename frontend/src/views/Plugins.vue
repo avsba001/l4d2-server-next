@@ -14,6 +14,7 @@
     Alert as AAlert,
     Drawer as ADrawer,
     Select as ASelect,
+    Tag as ATag,
   } from 'ant-design-vue';
   import {
     UploadOutlined,
@@ -25,6 +26,7 @@
     SyncOutlined,
     AppstoreAddOutlined,
     DownloadOutlined,
+    CheckCircleOutlined,
   } from '@ant-design/icons-vue';
   import { api } from '../services/api';
   import type { UploadProps, TablePaginationConfig } from 'ant-design-vue';
@@ -63,6 +65,7 @@
     name: string;
     file_count: number;
     size: number;
+    installed: boolean;
   }
 
   const plugins = ref<Plugin[]>([]);
@@ -80,6 +83,7 @@
   const storePlugins = ref<StorePlugin[]>([]);
   const storeSearchText = ref('');
   const downloadingPlugin = ref<Record<string, boolean>>({});
+  const storeInstallFilter = ref<'all' | 'installed' | 'not-installed'>('all');
 
   // Store drawer layout
   const searchSectionRef = ref<HTMLElement | null>(null);
@@ -334,9 +338,17 @@
   };
 
   const filteredStorePlugins = computed(() => {
-    if (!storeSearchText.value) return storePlugins.value;
-    const lower = storeSearchText.value.toLowerCase();
-    return storePlugins.value.filter((p) => p.name.toLowerCase().includes(lower));
+    let list = storePlugins.value;
+    if (storeInstallFilter.value === 'installed') {
+      list = list.filter((p) => p.installed);
+    } else if (storeInstallFilter.value === 'not-installed') {
+      list = list.filter((p) => !p.installed);
+    }
+    if (storeSearchText.value) {
+      const lower = storeSearchText.value.toLowerCase();
+      list = list.filter((p) => p.name.toLowerCase().includes(lower));
+    }
+    return [...list].sort((a, b) => a.name.localeCompare(b.name));
   });
 
   const downloadFromStore = async (plugin: StorePlugin) => {
@@ -348,6 +360,9 @@
       const proxy = selectedProxy.value.length > 0 ? selectedProxy.value[0] || '' : '';
       await api.downloadStorePlugin(plugin.name, proxy);
       message.success(`插件 ${plugin.name} 下载成功`);
+      // 本地即时更新已安装状态，避免重新请求 GitHub
+      const idx = storePlugins.value.findIndex((p) => p.name === plugin.name);
+      if (idx !== -1) storePlugins.value[idx]!.installed = true;
       fetchPlugins();
     } catch (error: any) {
       message.error(`下载失败: ` + error.message);
@@ -493,7 +508,7 @@
       {
         title: '操作',
         key: 'actions',
-        width: 100,
+        width: 110,
       },
     ];
     return isMobile.value ? cols.filter((c) => c.key !== 'size') : cols;
@@ -943,6 +958,32 @@
               刷新
             </a-button>
           </div>
+
+          <div class="flex items-center gap-2">
+            <span class="text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap"
+              >安装状态:</span
+            >
+            <div class="flex gap-1">
+              <a-button
+                :type="storeInstallFilter === 'all' ? 'primary' : 'default'"
+                size="small"
+                @click="storeInstallFilter = 'all'"
+                >全部</a-button
+              >
+              <a-button
+                :type="storeInstallFilter === 'not-installed' ? 'primary' : 'default'"
+                size="small"
+                @click="storeInstallFilter = 'not-installed'"
+                >未安装</a-button
+              >
+              <a-button
+                :type="storeInstallFilter === 'installed' ? 'primary' : 'default'"
+                size="small"
+                @click="storeInstallFilter = 'installed'"
+                >已安装</a-button
+              >
+            </div>
+          </div>
         </div>
 
         <a-table
@@ -972,7 +1013,16 @@
             </template>
 
             <template v-else-if="column.key === 'actions'">
+              <a-tag
+                v-if="(record as StorePlugin).installed"
+                color="success"
+                class="!flex !items-center !w-fit gap-1 !cursor-default"
+              >
+                <template #icon><CheckCircleOutlined /></template>
+                已安装
+              </a-tag>
               <a-button
+                v-else
                 type="primary"
                 size="small"
                 :loading="downloadingPlugin[record.name]"
