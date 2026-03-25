@@ -532,6 +532,19 @@
     disabledPagination.current = pag.current;
     disabledPagination.pageSize = pag.pageSize;
   };
+
+  const storePagination = reactive<TablePaginationConfig>({
+    current: 1,
+    pageSize: 20,
+    showSizeChanger: true,
+    pageSizeOptions: ['10', '20', '50', '100'],
+    showTotal: (total: number) => `共 ${total} 个插件`,
+  });
+
+  const handleStoreTableChange = (pag: TablePaginationConfig) => {
+    storePagination.current = pag.current;
+    storePagination.pageSize = pag.pageSize;
+  };
 </script>
 
 <template>
@@ -938,11 +951,8 @@
           :loading="storeLoading"
           row-key="name"
           :scroll="{ y: tableScrollY }"
-          :pagination="{
-            pageSize: 20,
-            showSizeChanger: true,
-            showTotal: (total) => `共 ${total} 个插件`,
-          }"
+          :pagination="storePagination"
+          @change="handleStoreTableChange"
           size="middle"
         >
           <template #bodyCell="{ column, record }">
