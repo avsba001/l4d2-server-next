@@ -30,7 +30,18 @@ fi
 SERVER_PORT=${L4D2_PORT:-27015}
 echo "设置服务器端口为: ${SERVER_PORT}"
 
+# 控制VAC模式，环境变量L4D2_VAC
+# 默认false：添加-insecure；设置为true：不添加-insecure
+VAC_MODE=${L4D2_VAC:-false}
+SECURITY_ARG="-insecure"
+if [ "${VAC_MODE,,}" = "true" ]; then
+    echo "启用VAC模式，不添加-insecure参数"
+    SECURITY_ARG=""
+else
+    echo "关闭VAC模式，添加-insecure参数"
+fi
+
 echo "文件检查和初始化完成，启动服务器..."
 
 # 启动L4D2服务器
-cd /l4d2 && ./srcds_run -game left4dead2 -insecure -tickrate "${REAL_TICK}" -condebug +hostport "${SERVER_PORT}" +exec server.cfg
+cd /l4d2 && ./srcds_run -game left4dead2 ${SECURITY_ARG} -tickrate "${REAL_TICK}" -condebug +hostport "${SERVER_PORT}" +exec server.cfg

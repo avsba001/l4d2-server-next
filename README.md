@@ -100,6 +100,7 @@ services:
       - l4d2-network
     environment:
       - L4D2_TICK=100 # 30,60,100
+      - L4D2_VAC=false # false: 添加-insecure, true: 不添加
       - L4D2_PORT=27015
       - L4D2_RCON_PASSWORD=[rcon密码] # 请修改此处
 
@@ -184,16 +185,17 @@ docker run -d \
 
 ## ⚙️ 环境变量说明
 
-| 变量名                    | 描述                                  | 默认值/必填                   |
-| :------------------------ | :------------------------------------ | :---------------------------- |
-| **L4D2_MANAGER_PASSWORD** | Web 管理后台登录密码                  | **必填**                      |
-| **L4D2_GAME_PATH**        | L4D2 游戏目录路径 (left4dead2 文件夹) | **必填**                      |
-| **L4D2_RCON_URL**         | RCON 地址 (IP:Port)                   | 推荐配置，否则无法切图/看状态 |
-| **L4D2_RCON_PASSWORD**    | RCON 密码                             | 推荐配置                      |
-| **L4D2_RESTART_BY_RCON**  | 是否通过 RCON 命令重启服务器          | `false` (推荐 `true`)         |
-| **L4D2_HISTORY_METRICS**  | 是否开启历史性能监控 (需持久化数据)   | `false`                       |
-| **STEAM_API_KEY**         | Steam API Key (用于查询玩家时长)      | 可选                          |
-| **REGION_WHITE_LIST**     | GeoIP 区域白名单 (如: 中国)           | 可选 (不填则不拦截)           |
-| **L4D2_MANAGER_PORT**     | 管理器监听端口                        | `27020`                       |
+| 变量名                    | 描述                                  | 默认值/必填                     |
+| :------------------------ | :------------------------------------ | :------------------------------ |
+| **L4D2_MANAGER_PASSWORD** | Web 管理后台登录密码                  | **必填**                        |
+| **L4D2_GAME_PATH**        | L4D2 游戏目录路径 (left4dead2 文件夹) | **必填**                        |
+| **L4D2_RCON_URL**         | RCON 地址 (IP:Port)                   | 推荐配置，否则无法切图/看状态   |
+| **L4D2_RCON_PASSWORD**    | RCON 密码                             | 推荐配置                        |
+| **L4D2_VAC**              | 游戏服是否启用 VAC                    | `false`（默认添加 `-insecure`） |
+| **L4D2_RESTART_BY_RCON**  | 是否通过 RCON 命令重启服务器          | `false` (推荐 `true`)           |
+| **L4D2_HISTORY_METRICS**  | 是否开启历史性能监控 (需持久化数据)   | `false`                         |
+| **STEAM_API_KEY**         | Steam API Key (用于查询玩家时长)      | 可选                            |
+| **REGION_WHITE_LIST**     | GeoIP 区域白名单 (如: 中国)           | 可选 (不填则不拦截)             |
+| **L4D2_MANAGER_PORT**     | 管理器监听端口                        | `27020`                         |
 
 ---
