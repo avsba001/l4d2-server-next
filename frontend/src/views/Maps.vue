@@ -1,5 +1,6 @@
 <script setup lang="ts">
   import { ref, computed, onMounted, onUnmounted, h, watch, reactive } from 'vue';
+  defineOptions({ name: 'Maps' });
   import { api } from '../services/api';
   import { message, Modal } from 'ant-design-vue';
   import type { TablePaginationConfig } from 'ant-design-vue';

@@ -267,7 +267,9 @@
         <div class="max-w-6xl mx-auto w-full animate-fade-in">
           <router-view v-slot="{ Component }">
             <transition name="fade" mode="out-in">
-              <component :is="Component" :key="route.fullPath" v-if="Component" />
+              <keep-alive :include="['Maps']">
+                <component :is="Component" :key="route.fullPath" v-if="Component" />
+              </keep-alive>
             </transition>
           </router-view>
         </div>
