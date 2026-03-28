@@ -1,5 +1,5 @@
 <script setup lang="ts">
-  import { ref, computed, onMounted, onErrorCaptured, reactive, watch } from 'vue';
+  import { ref, computed, onMounted, onErrorCaptured, reactive, watch, nextTick } from 'vue';
   import {
     message,
     Card as ACard,
@@ -14,6 +14,7 @@
     Alert as AAlert,
     Drawer as ADrawer,
     Select as ASelect,
+    Tag as ATag,
   } from 'ant-design-vue';
   import {
     UploadOutlined,
@@ -25,6 +26,7 @@
     SyncOutlined,
     AppstoreAddOutlined,
     DownloadOutlined,
+    CheckCircleOutlined,
   } from '@ant-design/icons-vue';
   import { api } from '../services/api';
   import type { UploadProps, TablePaginationConfig } from 'ant-design-vue';
@@ -46,6 +48,7 @@
   import { onUnmounted } from 'vue';
   onUnmounted(() => {
     window.removeEventListener('resize', handleResize);
+    storeResizeObserver?.disconnect();
   });
 
   const drawerWidth = computed(() => {
@@ -62,6 +65,7 @@
     name: string;
     file_count: number;
     size: number;
+    installed: boolean;
   }
 
   const plugins = ref<Plugin[]>([]);
@@ -79,6 +83,23 @@
   const storePlugins = ref<StorePlugin[]>([]);
   const storeSearchText = ref('');
   const downloadingPlugin = ref<Record<string, boolean>>({});
+  const storeInstallFilter = ref<'all' | 'installed' | 'not-installed'>('all');
+
+  // Store drawer layout
+  const searchSectionRef = ref<HTMLElement | null>(null);
+  const storeContainerRef = ref<HTMLElement | null>(null);
+  const tableScrollY = ref(400);
+  let storeResizeObserver: ResizeObserver | null = null;
+
+  const computeStoreTableScrollY = () => {
+    if (!searchSectionRef.value || !storeContainerRef.value) return;
+    const containerHeight = storeContainerRef.value.clientHeight;
+    // searchSection offsetHeight + mb-4 (16px) + table thead (~39px) + pagination with margin (~48px)
+    const overhead = searchSectionRef.value.offsetHeight + 16 + 39 + 48;
+    tableScrollY.value = Math.max(150, containerHeight - overhead);
+  };
+
+  const getBody = () => document.body;
 
   const proxyOptions = [
     { label: 'gh-proxy.com', value: 'https://gh-proxy.com/' },
@@ -317,9 +338,17 @@
   };
 
   const filteredStorePlugins = computed(() => {
-    if (!storeSearchText.value) return storePlugins.value;
-    const lower = storeSearchText.value.toLowerCase();
-    return storePlugins.value.filter((p) => p.name.toLowerCase().includes(lower));
+    let list = storePlugins.value;
+    if (storeInstallFilter.value === 'installed') {
+      list = list.filter((p) => p.installed);
+    } else if (storeInstallFilter.value === 'not-installed') {
+      list = list.filter((p) => !p.installed);
+    }
+    if (storeSearchText.value) {
+      const lower = storeSearchText.value.toLowerCase();
+      list = list.filter((p) => p.name.toLowerCase().includes(lower));
+    }
+    return [...list].sort((a, b) => a.name.localeCompare(b.name));
   });
 
   const downloadFromStore = async (plugin: StorePlugin) => {
@@ -331,6 +360,9 @@
       const proxy = selectedProxy.value.length > 0 ? selectedProxy.value[0] || '' : '';
       await api.downloadStorePlugin(plugin.name, proxy);
       message.success(`插件 ${plugin.name} 下载成功`);
+      // 本地即时更新已安装状态，避免重新请求 GitHub
+      const idx = storePlugins.value.findIndex((p) => p.name === plugin.name);
+      if (idx !== -1) storePlugins.value[idx]!.installed = true;
       fetchPlugins();
     } catch (error: any) {
       message.error(`下载失败: ` + error.message);
@@ -342,6 +374,21 @@
 
   watch(activeTab, () => {
     selectedRowKeys.value = [];
+  });
+
+  watch(storeVisible, (val) => {
+    if (val) {
+      nextTick(() => {
+        computeStoreTableScrollY();
+        if (storeContainerRef.value && !storeResizeObserver) {
+          storeResizeObserver = new ResizeObserver(computeStoreTableScrollY);
+          storeResizeObserver.observe(storeContainerRef.value);
+        }
+      });
+    } else {
+      storeResizeObserver?.disconnect();
+      storeResizeObserver = null;
+    }
   });
 
   const handleBatchEnable = async () => {
@@ -444,25 +491,28 @@
     },
   ];
 
-  const storeColumns = [
-    {
-      title: '插件名称',
-      dataIndex: 'name',
-      key: 'name',
-      ellipsis: true,
-    },
-    {
-      title: '大小',
-      dataIndex: 'size',
-      key: 'size',
-      width: 100,
-    },
-    {
-      title: '操作',
-      key: 'actions',
-      width: 100,
-    },
-  ];
+  const storeColumns = computed(() => {
+    const cols = [
+      {
+        title: '插件名称',
+        dataIndex: 'name',
+        key: 'name',
+        ellipsis: true,
+      },
+      {
+        title: '大小',
+        dataIndex: 'size',
+        key: 'size',
+        width: 100,
+      },
+      {
+        title: '操作',
+        key: 'actions',
+        width: 110,
+      },
+    ];
+    return isMobile.value ? cols.filter((c) => c.key !== 'size') : cols;
+  });
 
   const formatSize = (bytes: number) => {
     if (bytes === 0) return '0 B';
@@ -496,6 +546,19 @@
   const handleDisabledTableChange = (pag: TablePaginationConfig) => {
     disabledPagination.current = pag.current;
     disabledPagination.pageSize = pag.pageSize;
+  };
+
+  const storePagination = reactive<TablePaginationConfig>({
+    current: 1,
+    pageSize: 20,
+    showSizeChanger: true,
+    pageSizeOptions: ['10', '20', '50', '100'],
+    showTotal: (total: number) => `共 ${total} 个插件`,
+  });
+
+  const handleStoreTableChange = (pag: TablePaginationConfig) => {
+    storePagination.current = pag.current;
+    storePagination.pageSize = pag.pageSize;
   };
 </script>
 
@@ -850,9 +913,15 @@
       </div>
     </a-modal>
 
-    <a-drawer v-model:open="storeVisible" title="插件商店" placement="right" :width="drawerWidth">
-      <div class="flex flex-col h-full">
-        <div class="mb-4 space-y-4">
+    <a-drawer
+      v-model:open="storeVisible"
+      title="插件商店"
+      placement="right"
+      :width="drawerWidth"
+      :bodyStyle="{ overflow: 'hidden', display: 'flex', flexDirection: 'column', padding: '24px' }"
+    >
+      <div ref="storeContainerRef" class="flex flex-col flex-1 min-h-0">
+        <div ref="searchSectionRef" class="mb-4 space-y-4 flex-shrink-0">
           <div class="flex flex-col sm:flex-row sm:items-center gap-2">
             <span class="whitespace-nowrap font-medium text-gray-700 dark:text-gray-300"
               >加速源:</span
@@ -889,48 +958,83 @@
               刷新
             </a-button>
           </div>
+
+          <div class="flex items-center gap-2">
+            <span class="text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap"
+              >安装状态:</span
+            >
+            <div class="flex gap-1">
+              <a-button
+                :type="storeInstallFilter === 'all' ? 'primary' : 'default'"
+                size="small"
+                @click="storeInstallFilter = 'all'"
+                >全部</a-button
+              >
+              <a-button
+                :type="storeInstallFilter === 'not-installed' ? 'primary' : 'default'"
+                size="small"
+                @click="storeInstallFilter = 'not-installed'"
+                >未安装</a-button
+              >
+              <a-button
+                :type="storeInstallFilter === 'installed' ? 'primary' : 'default'"
+                size="small"
+                @click="storeInstallFilter = 'installed'"
+                >已安装</a-button
+              >
+            </div>
+          </div>
         </div>
 
-        <div class="flex-1 overflow-auto -mx-6 px-6">
-          <a-table
-            :columns="storeColumns"
-            :data-source="filteredStorePlugins"
-            :loading="storeLoading"
-            row-key="name"
-            :scroll="{ x: 'max-content' }"
-            :pagination="{
-              pageSize: 20,
-              showSizeChanger: true,
-              showTotal: (total) => `共 ${total} 个插件`,
-            }"
-            size="middle"
-          >
-            <template #bodyCell="{ column, record }">
-              <template v-if="column.key === 'name'">
-                <div class="truncate max-w-[150px] sm:max-w-[200px] md:max-w-[300px]">
-                  {{ record.name }}
-                </div>
-              </template>
-
-              <template v-else-if="column.key === 'size'">
-                {{ formatSize(record.size) }}
-              </template>
-
-              <template v-else-if="column.key === 'actions'">
-                <a-button
-                  type="primary"
-                  size="small"
-                  :loading="downloadingPlugin[record.name]"
-                  @click="downloadFromStore(record as StorePlugin)"
-                  class="!flex !items-center !justify-center"
-                >
-                  <template #icon><DownloadOutlined /></template>
-                  下载
-                </a-button>
-              </template>
+        <a-table
+          :columns="storeColumns"
+          :data-source="filteredStorePlugins"
+          :loading="storeLoading"
+          row-key="name"
+          :scroll="{ y: tableScrollY }"
+          :pagination="storePagination"
+          @change="handleStoreTableChange"
+          size="middle"
+        >
+          <template #bodyCell="{ column, record }">
+            <template v-if="column.key === 'name'">
+              <a-tooltip placement="topLeft" :getPopupContainer="getBody">
+                <template #title>
+                  <div style="word-break: break-all; white-space: normal; max-width: 280px">
+                    {{ record.name }}
+                  </div>
+                </template>
+                <div class="truncate">{{ record.name }}</div>
+              </a-tooltip>
             </template>
-          </a-table>
-        </div>
+
+            <template v-else-if="column.key === 'size'">
+              {{ formatSize(record.size) }}
+            </template>
+
+            <template v-else-if="column.key === 'actions'">
+              <a-tag
+                v-if="(record as StorePlugin).installed"
+                color="success"
+                class="!flex !items-center !w-fit gap-1 !cursor-default"
+              >
+                <template #icon><CheckCircleOutlined /></template>
+                已安装
+              </a-tag>
+              <a-button
+                v-else
+                type="primary"
+                size="small"
+                :loading="downloadingPlugin[record.name]"
+                @click="downloadFromStore(record as StorePlugin)"
+                class="!flex !items-center !justify-center"
+              >
+                <template #icon><DownloadOutlined /></template>
+                下载
+              </a-button>
+            </template>
+          </template>
+        </a-table>
       </div>
     </a-drawer>
 

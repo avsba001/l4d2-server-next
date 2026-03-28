@@ -27,6 +27,7 @@ type StorePlugin struct {
 	Name      string `json:"name"`
 	FileCount int    `json:"file_count"`
 	Size      int    `json:"size"`
+	Installed bool   `json:"installed"`
 }
 
 var (
@@ -41,8 +42,9 @@ func FetchStorePlugins(forceRefresh bool, proxyUrl string) ([]StorePlugin, error
 	defer storeCacheMut.Unlock()
 
 	// Cache for 10 minutes, unless forceRefresh is true
+	// Installed 字段每次都实时计算，不依赖缓存
 	if !forceRefresh && time.Since(storeCacheTime) < 10*time.Minute && storeCache != nil {
-		return storeCache, nil
+		return markInstalledPlugins(storeCache), nil
 	}
 
 	client := &http.Client{Timeout: 10 * time.Second}
@@ -110,7 +112,27 @@ func FetchStorePlugins(forceRefresh bool, proxyUrl string) ([]StorePlugin, error
 	storeCache = plugins
 	storeCacheTime = time.Now()
 
-	return plugins, nil
+	return markInstalledPlugins(plugins), nil
+}
+
+// markInstalledPlugins 根据本地目录判断哪些商店插件已安装，每次调用都实时重新计算
+func markInstalledPlugins(plugins []StorePlugin) []StorePlugin {
+	storePath := getStorePath()
+	installedSet := make(map[string]bool)
+	if entries, err := os.ReadDir(storePath); err == nil {
+		for _, e := range entries {
+			if e.IsDir() {
+				installedSet[e.Name()] = true
+			}
+		}
+	}
+
+	result := make([]StorePlugin, len(plugins))
+	copy(result, plugins)
+	for i := range result {
+		result[i].Installed = installedSet[result[i].Name]
+	}
+	return result
 }
 
 // DownloadStorePlugin downloads a plugin from the store
